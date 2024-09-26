@@ -96,10 +96,10 @@ public class DriveTest extends LinearOpMode {
         // Reverse the direction (flip FORWARD <-> REVERSE ) of any wheel that runs backward
         // Keep testing until ALL the wheels move the robot forward when you push the left joystick forward.
 
-        leftFrontDrive.setDirection(DcMotor.Direction.FORWARD);
-        leftBackDrive.setDirection(DcMotor.Direction.FORWARD);
-        rightFrontDrive.setDirection(DcMotor.Direction.REVERSE);
-        rightBackDrive.setDirection(DcMotor.Direction.REVERSE);
+        leftFrontDrive.setDirection(DcMotor.Direction.FORWARD); // 3
+        leftBackDrive.setDirection(DcMotor.Direction.FORWARD);  // 2
+        rightFrontDrive.setDirection(DcMotor.Direction.REVERSE);  // 1
+        rightBackDrive.setDirection(DcMotor.Direction.REVERSE);  // 0
 
         // Wait for the game to start (driver presses START)
         telemetry.addData("Status", "Initialized");
