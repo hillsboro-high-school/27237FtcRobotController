@@ -13,11 +13,16 @@ public class OdometryPods extends LinearOpMode {
 
     // Declare OpMode members for each of the 4 motors.
     private ElapsedTime runtime = new ElapsedTime();
-    private DcMotor leftFrontDrive = null;
-    private DcMotor leftBackDrive = null;
-    private DcMotor rightFrontDrive = null;
-    private DcMotor rightBackDrive = null;
+    private DcMotor FL = null;
+    private DcMotor BL = null;
+    private DcMotor FR = null;
+    private DcMotor BR = null;
 
+    private DcMotor leftEncoderMotor = null;
+
+    private DcMotor rightEncoderMotor = null;
+
+    private DcMotor centerEncoderMotor = null;
 
     // Calculates the circumference for the Odometry pods
     // Divides by 25.4 to change mm to inches
@@ -28,25 +33,28 @@ public class OdometryPods extends LinearOpMode {
 
         // Initialize the hardware variables. Note that the strings used here must correspond
         // to the names assigned during the robot configuration step on the DS or RC devices.
-        leftFrontDrive = hardwareMap.get(DcMotor.class, "left_front_drive");
-        leftBackDrive = hardwareMap.get(DcMotor.class, "left_back_drive");
-        rightFrontDrive = hardwareMap.get(DcMotor.class, "right_front_drive");
-        rightBackDrive = hardwareMap.get(DcMotor.class, "right_back_drive");
+        FL = hardwareMap.get(DcMotor.class, "left_front_drive");
+        BL = hardwareMap.get(DcMotor.class, "left_back_drive");
+        FR = hardwareMap.get(DcMotor.class, "right_front_drive");
+        BR = hardwareMap.get(DcMotor.class, "right_back_drive");
 
-        leftFrontDrive.setDirection(DcMotor.Direction.FORWARD); // 3
-        leftBackDrive.setDirection(DcMotor.Direction.FORWARD);  // 2
-        rightFrontDrive.setDirection(DcMotor.Direction.REVERSE);  // 1
-        rightBackDrive.setDirection(DcMotor.Direction.REVERSE);  // 0
+        leftEncoderMotor = hardwareMap.get(DcMotor.class, "left_front_drive");
+        rightEncoderMotor = hardwareMap.get(DcMotor.class, "right_front_drive");
+        centerEncoderMotor = hardwareMap.get(DcMotor.class, "left_back_drive");
 
-        // Declares what motors have encoders/ Odometry pods
+        leftEncoderMotor.setDirection(DcMotorSimple.Direction.FORWARD);  // Directions taken from BlackBoxBot.java
+        leftEncoderMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+        leftEncoderMotor.setDirection(DcMotorSimple.Direction.FORWARD);
 
-        rightFrontDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        leftBackDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        leftFrontDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        FR.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        FL.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        BR.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        BL.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
-        rightFrontDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);  // x
-        leftBackDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);  // x
-        leftFrontDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);  // y
+        FR.setDirection(DcMotorSimple.Direction.FORWARD);
+        FL.setDirection(DcMotorSimple.Direction.FORWARD);
+        BR.setDirection(DcMotorSimple.Direction.REVERSE);
+        BL.setDirection(DcMotorSimple.Direction.REVERSE);
 
         // Send telemetry message to signify robot waiting;
         telemetry.addData("Status", "Ready to run");
@@ -58,31 +66,9 @@ public class OdometryPods extends LinearOpMode {
         double power = -0.2;
 
         int target_dist_in = 12*10;
-        double target_dist_pulse = InchesToPulse(target_dist_in);
+        double target_dist_pulses = InchesToPulse(target_dist_in);
 
-        rightFrontDrive.setTargetPosition((int)target_dist_pulse);
-        rightFrontDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
-        leftFrontDrive.setPower(power);
-        rightFrontDrive.setPower(power);
-        leftBackDrive.setPower(power);
-        rightBackDrive.setPower(power);
-
-        while (rightFrontDrive.isBusy()){
-            // wait until target pos is reached
-        }
-
-        leftFrontDrive.setPower(0);
-        rightFrontDrive.setPower(0);
-        leftBackDrive.setPower(0);
-        rightBackDrive.setPower(0);
-
-        telemetry.addData("Target Pulses: ", (int)target_dist_pulse);
-        telemetry.addData("RFD Pulses: ", rightFrontDrive.getCurrentPosition());
-        telemetry.update();
-
-        int secs = 1000*20;
-        sleep(secs);
 
     }
 
