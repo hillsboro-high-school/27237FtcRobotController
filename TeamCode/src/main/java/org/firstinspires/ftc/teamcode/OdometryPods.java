@@ -73,6 +73,22 @@ public class OdometryPods extends LinearOpMode {
 
         resetTicks();
 
+        int targetInches = 12*3;
+        double targetPulses = InchesToPulse(targetInches);
+
+        setPower(0.2);
+
+        while(getLeftTicks() < targetPulses){
+            telemetry.addData("Target Pulse", targetPulses);
+            telemetry.addData("Left Pulse", getLeftTicks());
+            telemetry.update();
+        }
+
+        stopPower();
+
+        telemetry.addData("Target Pulse", targetPulses);
+        telemetry.addData("Left Pulse", getLeftTicks());
+        telemetry.update();
 
 
 
@@ -83,11 +99,18 @@ public class OdometryPods extends LinearOpMode {
         resetCenterTicks();
     }
 
-    public void setPower(){
-        FL.setPower(0.2);
-        FR.setPower(0.2);
-        BL.setPower(0.2);
-        BR.setPower(0.2);
+    public void setPower(double p){
+        FL.setPower(p);
+        FR.setPower(p);
+        BL.setPower(p);
+        BR.setPower(p);
+    }
+
+    public void stopPower(){
+        FL.setPower(0);
+        FR.setPower(0);
+        BL.setPower(0);
+        BR.setPower(0);
 
     }
 

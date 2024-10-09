@@ -113,17 +113,18 @@ public class DriveTest extends LinearOpMode {
             double max;
 
             // POV Mode uses left joystick to go forward & strafe, and right joystick to rotate.
-            double axial   = gamepad1.left_stick_y;  // Note: pushing stick forward gives negative value
+            double axial   = gamepad1.left_stick_y;
             double lateral =  gamepad1.left_stick_x;
             double yaw     =  -gamepad1.right_stick_x;
 
             // Combine the joystick requests for each axis-motion to determine each wheel's power.
             // Set up a variable for each drive wheel to save the power level for telemetry.
 
+            // Right Front and Right back have switched lateral signs because of wire swap
             double leftFrontPower  = axial - lateral + yaw;
-            double rightFrontPower = axial - lateral - yaw;
+            double rightFrontPower = axial + lateral - yaw;
             double leftBackPower   = axial + lateral + yaw;
-            double rightBackPower  = axial + lateral - yaw;
+            double rightBackPower  = axial - lateral - yaw;
 
             // Normalize the values so no wheel power exceeds 100%
             // This ensures that the robot maintains the desired motion.
