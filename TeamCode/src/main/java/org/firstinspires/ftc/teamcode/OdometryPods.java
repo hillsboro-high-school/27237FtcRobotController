@@ -19,10 +19,18 @@ public class OdometryPods extends LinearOpMode {
     private DcMotor BR = null;
 
     private DcMotor leftEncoderMotor = null;
+    private int leftEncoderPos = 0;
+    private double deltaLeftEncoder = 0;
 
     private DcMotor rightEncoderMotor = null;
+    private int rightEncoderPos = 0;
+    private double deltaRightEncoder = 0;
 
     private DcMotor centerEncoderMotor = null;
+    private int centerEncoderPos = 0;
+    private double deltaCenterEncoder = 0;
+
+    private double theta = 0;
 
     // Calculates the circumference for the Odometry pods
     // Divides by 25.4 to change mm to inches
@@ -63,13 +71,48 @@ public class OdometryPods extends LinearOpMode {
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
 
-        double power = -0.2;
-
-        int target_dist_in = 12*10;
-        double target_dist_pulses = InchesToPulse(target_dist_in);
+        resetTicks();
 
 
 
+
+    }
+    public void resetTicks(){
+        resetLeftTicks();
+        resetRightTicks();
+        resetCenterTicks();
+    }
+
+    public void setPower(){
+        FL.setPower(0.2);
+        FR.setPower(0.2);
+        BL.setPower(0.2);
+        BR.setPower(0.2);
+
+    }
+
+    public void resetLeftTicks(){
+        leftEncoderPos = leftEncoderMotor.getCurrentPosition();
+    }
+
+    public int getLeftTicks(){
+        return leftEncoderMotor.getCurrentPosition() - leftEncoderPos;
+    }
+
+    public void resetRightTicks(){
+        rightEncoderPos = rightEncoderMotor.getCurrentPosition();
+    }
+
+    public int getRightTicks(){
+        return rightEncoderMotor.getCurrentPosition() - rightEncoderPos;
+    }
+
+    public void resetCenterTicks(){
+        rightEncoderPos = rightEncoderMotor.getCurrentPosition();
+    }
+
+    public int getCenterTicks(){
+        return centerEncoderMotor.getCurrentPosition() - centerEncoderPos;
     }
 
     public double PulseToInches(int pulses){
