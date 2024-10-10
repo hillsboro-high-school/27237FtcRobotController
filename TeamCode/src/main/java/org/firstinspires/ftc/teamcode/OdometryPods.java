@@ -32,6 +32,9 @@ public class OdometryPods extends LinearOpMode {
 
     private double theta = 0;
 
+    private boolean rightStop = false;
+    private boolean leftStop = false;
+
     // Calculates the circumference for the Odometry pods
     // Divides by 25.4 to change mm to inches
     double OPcircumference = 2*Math.PI*(16/25.4);
@@ -51,18 +54,18 @@ public class OdometryPods extends LinearOpMode {
         centerEncoderMotor = hardwareMap.get(DcMotor.class, "left_back_drive");
 
         leftEncoderMotor.setDirection(DcMotorSimple.Direction.FORWARD);  // Directions taken from BlackBoxBot.java
-        leftEncoderMotor.setDirection(DcMotorSimple.Direction.REVERSE);
-        leftEncoderMotor.setDirection(DcMotorSimple.Direction.FORWARD);
+        rightEncoderMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+        centerEncoderMotor.setDirection(DcMotorSimple.Direction.FORWARD);
 
         FR.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         FL.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         BR.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         BL.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
-        FR.setDirection(DcMotorSimple.Direction.FORWARD);
+        FR.setDirection(DcMotorSimple.Direction.REVERSE);
         FL.setDirection(DcMotorSimple.Direction.FORWARD);
         BR.setDirection(DcMotorSimple.Direction.REVERSE);
-        BL.setDirection(DcMotorSimple.Direction.REVERSE);
+        BL.setDirection(DcMotorSimple.Direction.FORWARD);
 
         // Send telemetry message to signify robot waiting;
         telemetry.addData("Status", "Ready to run");
@@ -70,28 +73,30 @@ public class OdometryPods extends LinearOpMode {
 
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
-
         resetTicks();
 
-        int targetInches = 12*3;
-        double targetPulses = InchesToPulse(targetInches);
+        int targetInches = 12*10;
+        double targetTicks = InchesToPulse(targetInches);
 
-        setPower(0.2);
+        setLeftPower(-0.5);
+        setRightPower(-0.5);
 
-        while(getLeftTicks() < targetPulses){
-            telemetry.addData("Target Pulse", targetPulses);
-            telemetry.addData("Left Pulse", getLeftTicks());
-            telemetry.update();
+        while (!(rightStop && leftStop)){
+            if (getRightTicks() >= targetTicks){
+                rightStop = true;
+                stopRightPower();
+            }
+            if (getLeftTicks() >= targetTicks){
+                leftStop = true;
+                stopLeftPower();
+            }
         }
-
-        stopPower();
-
-        telemetry.addData("Target Pulse", targetPulses);
-        telemetry.addData("Left Pulse", getLeftTicks());
+        telemetry.addData("Target Tick", targetTicks);
+        telemetry.addData("Left pos", getLeftTicks());
+        telemetry.addData("Right pos", getLeftTicks());
         telemetry.update();
 
-
-
+        sleep(10000);
     }
     public void resetTicks(){
         resetLeftTicks();
@@ -99,19 +104,24 @@ public class OdometryPods extends LinearOpMode {
         resetCenterTicks();
     }
 
-    public void setPower(double p){
+    public void setLeftPower(double p){
         FL.setPower(p);
-        FR.setPower(p);
         BL.setPower(p);
+    }
+
+    public void setRightPower(double p){
+        FR.setPower(p);
         BR.setPower(p);
     }
 
-    public void stopPower(){
+    public void stopLeftPower(){
         FL.setPower(0);
-        FR.setPower(0);
         BL.setPower(0);
-        BR.setPower(0);
+    }
 
+    public void stopRightPower(){
+        FR.setPower(0);
+        BR.setPower(0);
     }
 
     public void resetLeftTicks(){
@@ -119,7 +129,7 @@ public class OdometryPods extends LinearOpMode {
     }
 
     public int getLeftTicks(){
-        return leftEncoderMotor.getCurrentPosition() - leftEncoderPos;
+        return (leftEncoderMotor.getCurrentPosition() - leftEncoderPos)*-1;
     }
 
     public void resetRightTicks(){
@@ -131,11 +141,11 @@ public class OdometryPods extends LinearOpMode {
     }
 
     public void resetCenterTicks(){
-        rightEncoderPos = rightEncoderMotor.getCurrentPosition();
+        centerEncoderPos = centerEncoderMotor.getCurrentPosition();
     }
 
     public int getCenterTicks(){
-        return centerEncoderMotor.getCurrentPosition() - centerEncoderPos;
+        return (centerEncoderMotor.getCurrentPosition() - centerEncoderPos)*-1;
     }
 
     public double PulseToInches(int pulses){
