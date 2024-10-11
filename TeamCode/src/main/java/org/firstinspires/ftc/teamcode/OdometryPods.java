@@ -19,15 +19,15 @@ public class OdometryPods extends LinearOpMode {
     private DcMotor BR = null;
 
     private DcMotor leftEncoderMotor = null;
-    private int leftEncoderPos = 0;
+    private double leftEncoderPos = 0;
     private double deltaLeftEncoder = 0;
 
     private DcMotor rightEncoderMotor = null;
-    private int rightEncoderPos = 0;
+    private double rightEncoderPos = 0;
     private double deltaRightEncoder = 0;
 
     private DcMotor centerEncoderMotor = null;
-    private int centerEncoderPos = 0;
+    private double centerEncoderPos = 0;
     private double deltaCenterEncoder = 0;
 
     private double theta = 0;
@@ -35,9 +35,11 @@ public class OdometryPods extends LinearOpMode {
     private boolean rightStop = false;
     private boolean leftStop = false;
 
+    private double tileMatLength = 12*2;  // in inches
+
     // Calculates the circumference for the Odometry pods
     // Divides by 25.4 to change mm to inches
-    double OPcircumference = 2*Math.PI*(16/25.4);
+    double OPcircumference = 2.0*Math.PI*(16.0/25.4);
 
     @Override
     public void runOpMode() {
@@ -62,10 +64,7 @@ public class OdometryPods extends LinearOpMode {
         BR.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         BL.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
-        FR.setDirection(DcMotorSimple.Direction.REVERSE);
-        FL.setDirection(DcMotorSimple.Direction.FORWARD);
-        BR.setDirection(DcMotorSimple.Direction.REVERSE);
-        BL.setDirection(DcMotorSimple.Direction.FORWARD);
+        setNormalDrive();  // Sets all motors to correct forward/reverse
 
         // Send telemetry message to signify robot waiting;
         telemetry.addData("Status", "Ready to run");
@@ -75,33 +74,123 @@ public class OdometryPods extends LinearOpMode {
         waitForStart();
         resetTicks();
 
-        int targetInches = 12*10;
-        double targetTicks = InchesToPulse(targetInches);
+        driveForward(InchesToTicks(tileMatLength/2));
+        sleep(1000*10);
+        driveBackward(InchesToTicks(tileMatLength/2));
+        sleep(1000*10);
+        strafeRight(InchesToTicks(tileMatLength*2));
+        sleep(1000*10);
+        driveBackward(InchesToTicks(tileMatLength*1.2));
 
-        setLeftPower(-0.5);
-        setRightPower(-0.5);
-
-        while (!(rightStop && leftStop)){
-            if (getRightTicks() >= targetTicks){
-                rightStop = true;
-                stopRightPower();
-            }
-            if (getLeftTicks() >= targetTicks){
-                leftStop = true;
-                stopLeftPower();
-            }
-        }
-        telemetry.addData("Target Tick", targetTicks);
         telemetry.addData("Left pos", getLeftTicks());
-        telemetry.addData("Right pos", getLeftTicks());
+        telemetry.addData("Right pos", getRightTicks());
+        telemetry.addData("Center pos", getCenterTicks());
         telemetry.update();
 
         sleep(10000);
     }
+
+    public void driveForward(double targetTicks) {
+        resetTicks();
+        setAllPower(-0.5);
+        while (!(rightStop && leftStop)) {
+            if (getRightTicks() >= targetTicks) {
+                rightStop = true;
+                stopRightPower();
+            }
+            if (getLeftTicks() >= targetTicks) {
+                leftStop = true;
+                stopLeftPower();
+            }
+            telemetry.addData("Forward!", rightStop);
+            telemetry.addData("Target pos", targetTicks);
+            telemetry.addData("Left pos", getLeftTicks());
+            telemetry.addData("Right pos", getRightTicks());
+            telemetry.update();
+        }
+        rightStop = false;
+        leftStop = false;
+
+        stopAllPower();
+        resetTicks();
+    }
+
+    public void driveBackward(double targetTicks) {
+        resetTicks();
+        setAllPower(0.5);
+        while (!(rightStop && leftStop)) {
+            if (Math.abs(getRightTicks()) >= targetTicks) {
+                rightStop = true;
+                stopRightPower();
+            }
+            if (Math.abs(getLeftTicks()) >= targetTicks) {
+                leftStop = true;
+                stopLeftPower();
+            }
+            telemetry.addData("Backward!", rightStop);
+            telemetry.addData("Target pos", targetTicks);
+            telemetry.addData("Left pos", Math.abs(getLeftTicks()));
+            telemetry.addData("Right pos", Math.abs(getRightTicks()));
+            telemetry.update();
+        }
+        rightStop = false;
+        leftStop = false;
+        stopAllPower();
+        resetTicks();
+    }
+
+    public void strafeRight(double targetTicks) {
+        resetTicks();
+        setStrafingDrive();
+        setAllPower(-0.5);
+        telemetry.addData("StrafeRight!", rightStop);
+        telemetry.addData("Center pos", getCenterTicks());
+        telemetry.addData("Target pos", targetTicks);
+        telemetry.update();
+        while (getCenterTicks() <= targetTicks){
+            telemetry.addData("StrafeRight!", rightStop);
+            telemetry.addData("Center pos", getCenterTicks());
+            telemetry.addData("Target pos", targetTicks);
+            telemetry.update();
+        }
+        stopAllPower();
+        resetTicks();
+        setNormalDrive();
+    }
+
+    public void setNormalDrive(){
+        FR.setDirection(DcMotorSimple.Direction.REVERSE);
+        FL.setDirection(DcMotorSimple.Direction.FORWARD);
+        BR.setDirection(DcMotorSimple.Direction.REVERSE);
+        BL.setDirection(DcMotorSimple.Direction.FORWARD);
+    }
+
+    public void setStrafingDrive(){
+        FR.setDirection(DcMotorSimple.Direction.FORWARD);
+        FL.setDirection(DcMotorSimple.Direction.FORWARD);
+        BR.setDirection(DcMotorSimple.Direction.REVERSE);
+        BL.setDirection(DcMotorSimple.Direction.REVERSE);
+    }
+
+
     public void resetTicks(){
         resetLeftTicks();
         resetRightTicks();
         resetCenterTicks();
+    }
+
+    public void setAllPower(double p){
+        FL.setPower(p);
+        FR.setPower(p);
+        BL.setPower(p);
+        BR.setPower(p);
+    }
+
+    public void stopAllPower(){
+        FL.setPower(0);
+        FR.setPower(0);
+        BL.setPower(0);
+        BR.setPower(0);
     }
 
     public void setLeftPower(double p){
@@ -128,34 +217,34 @@ public class OdometryPods extends LinearOpMode {
         leftEncoderPos = leftEncoderMotor.getCurrentPosition();
     }
 
-    public int getLeftTicks(){
-        return (leftEncoderMotor.getCurrentPosition() - leftEncoderPos)*-1;
+    public double getLeftTicks(){
+        return ((leftEncoderMotor.getCurrentPosition() - leftEncoderPos)*-1);
     }
 
     public void resetRightTicks(){
         rightEncoderPos = rightEncoderMotor.getCurrentPosition();
     }
 
-    public int getRightTicks(){
-        return rightEncoderMotor.getCurrentPosition() - rightEncoderPos;
+    public double getRightTicks(){
+        return (rightEncoderMotor.getCurrentPosition() - rightEncoderPos);
     }
 
     public void resetCenterTicks(){
         centerEncoderPos = centerEncoderMotor.getCurrentPosition();
     }
 
-    public int getCenterTicks(){
-        return (centerEncoderMotor.getCurrentPosition() - centerEncoderPos)*-1;
+    public double getCenterTicks(){
+        return (centerEncoderMotor.getCurrentPosition() - centerEncoderPos);
     }
 
-    public double PulseToInches(int pulses){
-        double rev = (double)pulses/2000;
+    public double TicksToInches(double ticks){
+        double rev = (double)ticks/2000;
         double inches = OPcircumference * rev;
         return inches;
     }
-    public double InchesToPulse(int inches){
+    public double InchesToTicks(double inches){
         double rev = inches/OPcircumference;
-        double pulses = 2000*rev;
-        return pulses;
+        double tick = 2000*rev;
+        return tick;
     }
 }
