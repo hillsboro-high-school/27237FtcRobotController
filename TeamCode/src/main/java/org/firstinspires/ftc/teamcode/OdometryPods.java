@@ -35,7 +35,7 @@ public class OdometryPods extends LinearOpMode {
     private boolean rightStop = false;
     private boolean leftStop = false;
 
-    private double tileMatLength = 12*2;  // in inches
+    private double tileMatLength = 12*2;  // Inches
 
     // Calculates the circumference for the Odometry pods
     // Divides by 25.4 to change mm to inches
@@ -74,12 +74,11 @@ public class OdometryPods extends LinearOpMode {
         waitForStart();
         resetTicks();
 
-        driveForward(InchesToTicks(tileMatLength/2));
+        strafeRight(InchesToTicks(tileMatLength), -0.2);
         sleep(1000*10);
-        driveBackward(InchesToTicks(tileMatLength/2));
-        sleep(1000*10);
-        strafeRight(InchesToTicks(tileMatLength*2));
-        sleep(1000*10);
+        driveForward(InchesToTicks(tileMatLength/2.0));
+        driveBackward(InchesToTicks(tileMatLength/2.0));
+        strafeRight(InchesToTicks(tileMatLength*2.0), -0.2);
         driveBackward(InchesToTicks(tileMatLength*1.2));
 
         telemetry.addData("Left pos", getLeftTicks());
@@ -139,15 +138,15 @@ public class OdometryPods extends LinearOpMode {
         resetTicks();
     }
 
-    public void strafeRight(double targetTicks) {
-        resetTicks();
+    public void strafeRight(double targetTicks, double power) {
+        resetCenterTicks();
         setStrafingDrive();
-        setAllPower(-0.5);
+        setAllPower(power);
         telemetry.addData("StrafeRight!", rightStop);
         telemetry.addData("Center pos", getCenterTicks());
         telemetry.addData("Target pos", targetTicks);
         telemetry.update();
-        while (getCenterTicks() <= targetTicks){
+        while (getCenterTicks() < targetTicks){
             telemetry.addData("StrafeRight!", rightStop);
             telemetry.addData("Center pos", getCenterTicks());
             telemetry.addData("Target pos", targetTicks);
