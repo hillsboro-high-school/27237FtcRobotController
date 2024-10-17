@@ -77,8 +77,11 @@ public class OdometryPods extends LinearOpMode {
         strafeRight(InchesToTicks(tileMatLength), -0.2);
         sleep(1000*10);
         driveForward(InchesToTicks(tileMatLength/2.0));
+        sleep(1000*10);
         driveBackward(InchesToTicks(tileMatLength/2.0));
+        sleep(1000*10);
         strafeRight(InchesToTicks(tileMatLength*2.0), -0.2);
+        sleep(1000*10);
         driveBackward(InchesToTicks(tileMatLength*1.2));
 
         telemetry.addData("Left pos", getLeftTicks());
@@ -139,13 +142,15 @@ public class OdometryPods extends LinearOpMode {
     }
 
     public void strafeRight(double targetTicks, double power) {
-        resetCenterTicks();
+        resetTicks();
         setStrafingDrive();
         setAllPower(power);
+
         telemetry.addData("StrafeRight!", rightStop);
         telemetry.addData("Center pos", getCenterTicks());
         telemetry.addData("Target pos", targetTicks);
         telemetry.update();
+
         while (getCenterTicks() < targetTicks){
             telemetry.addData("StrafeRight!", rightStop);
             telemetry.addData("Center pos", getCenterTicks());
@@ -217,7 +222,7 @@ public class OdometryPods extends LinearOpMode {
     }
 
     public double getLeftTicks(){
-        return ((leftEncoderMotor.getCurrentPosition() - leftEncoderPos)*-1);
+        return (-(leftEncoderMotor.getCurrentPosition() - leftEncoderPos));
     }
 
     public void resetRightTicks(){
@@ -230,9 +235,15 @@ public class OdometryPods extends LinearOpMode {
 
     public void resetCenterTicks(){
         centerEncoderPos = centerEncoderMotor.getCurrentPosition();
+        telemetry.addData("Center Pos", centerEncoderPos);
+        telemetry.update();
+        sleep(1000*5);
     }
 
     public double getCenterTicks(){
+        telemetry.addData("Center Pos", (centerEncoderMotor.getCurrentPosition() - centerEncoderPos));
+        telemetry.update();
+        sleep(1000*5);
         return (centerEncoderMotor.getCurrentPosition() - centerEncoderPos);
     }
 
