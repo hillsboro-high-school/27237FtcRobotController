@@ -64,6 +64,7 @@ public class OdometryPods extends LinearOpMode {
         BR.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         BL.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
+        resetTicks();
         setNormalDrive();  // Sets all motors to correct forward/reverse
 
         // Send telemetry message to signify robot waiting;
