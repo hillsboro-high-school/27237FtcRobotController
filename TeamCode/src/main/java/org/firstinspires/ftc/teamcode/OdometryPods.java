@@ -84,10 +84,7 @@ public class OdometryPods extends LinearOpMode {
         sleep(1000*10);
         driveBackward(InchesToTicks(tileMatLength*1.2));
 
-        telemetry.addData("Left pos", getLeftTicks());
-        telemetry.addData("Right pos", getRightTicks());
-        telemetry.addData("Center pos", getCenterTicks());
-        telemetry.update();
+        telemAllTicks("None");
 
         sleep(10000);
     }
@@ -95,6 +92,9 @@ public class OdometryPods extends LinearOpMode {
     public void driveForward(double targetTicks) {
         resetTicks();
         setAllPower(-0.5);
+
+        telemAllTicks("Forward");
+
         while (!(rightStop && leftStop)) {
             if (getRightTicks() >= targetTicks) {
                 rightStop = true;
@@ -104,12 +104,10 @@ public class OdometryPods extends LinearOpMode {
                 leftStop = true;
                 stopLeftPower();
             }
-            telemetry.addData("Forward!", rightStop);
-            telemetry.addData("Target pos", targetTicks);
-            telemetry.addData("Left pos", getLeftTicks());
-            telemetry.addData("Right pos", getRightTicks());
-            telemetry.update();
         }
+
+        telemAllTicks("Forward");
+
         rightStop = false;
         leftStop = false;
 
@@ -120,6 +118,9 @@ public class OdometryPods extends LinearOpMode {
     public void driveBackward(double targetTicks) {
         resetTicks();
         setAllPower(0.5);
+
+        telemAllTicks("Backward");
+
         while (!(rightStop && leftStop)) {
             if (Math.abs(getRightTicks()) >= targetTicks) {
                 rightStop = true;
@@ -129,12 +130,10 @@ public class OdometryPods extends LinearOpMode {
                 leftStop = true;
                 stopLeftPower();
             }
-            telemetry.addData("Backward!", rightStop);
-            telemetry.addData("Target pos", targetTicks);
-            telemetry.addData("Left pos", Math.abs(getLeftTicks()));
-            telemetry.addData("Right pos", Math.abs(getRightTicks()));
-            telemetry.update();
         }
+
+        telemAllTicks("Backward");
+
         rightStop = false;
         leftStop = false;
         stopAllPower();
@@ -146,17 +145,14 @@ public class OdometryPods extends LinearOpMode {
         setStrafingDrive();
         setAllPower(power);
 
-        telemetry.addData("StrafeRight!", rightStop);
-        telemetry.addData("Center pos", getCenterTicks());
-        telemetry.addData("Target pos", targetTicks);
-        telemetry.update();
+        telemAllTicks("Right");
 
         while (getCenterTicks() < targetTicks){
-            telemetry.addData("StrafeRight!", rightStop);
-            telemetry.addData("Center pos", getCenterTicks());
-            telemetry.addData("Target pos", targetTicks);
-            telemetry.update();
+
         }
+
+        telemAllTicks("Right");
+
         stopAllPower();
         resetTicks();
         setNormalDrive();
@@ -235,16 +231,18 @@ public class OdometryPods extends LinearOpMode {
 
     public void resetCenterTicks(){
         centerEncoderPos = centerEncoderMotor.getCurrentPosition();
-        telemetry.addData("Center Pos", centerEncoderPos);
-        telemetry.update();
-        sleep(1000*5);
     }
 
     public double getCenterTicks(){
-        telemetry.addData("Center Pos", (centerEncoderMotor.getCurrentPosition() - centerEncoderPos));
-        telemetry.update();
-        sleep(1000*5);
         return (centerEncoderMotor.getCurrentPosition() - centerEncoderPos);
+    }
+
+    public void telemAllTicks(String dir){
+        telemetry.addData("Direction", dir);
+        telemetry.addData("Left pos", getLeftTicks());
+        telemetry.addData("Right pos", getRightTicks());
+        telemetry.addData("Center pos", getCenterTicks());
+        telemetry.update();
     }
 
     public double TicksToInches(double ticks){
