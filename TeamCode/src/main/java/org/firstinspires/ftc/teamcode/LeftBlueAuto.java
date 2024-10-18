@@ -1,15 +1,13 @@
 package org.firstinspires.ftc.teamcode;
 
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorController;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.ElapsedTime;
-@TeleOp(name="Odometry Pods", group="Linear OpMode")
+@Autonomous(name="LeftBlueAuto", group="Linear OpMode")
 
-public class OdometryPods extends LinearOpMode {
+public class LeftBlueAuto extends LinearOpMode {
 
     // Declare OpMode members for each of the 4 motors.
     private ElapsedTime runtime = new ElapsedTime();
@@ -36,6 +34,8 @@ public class OdometryPods extends LinearOpMode {
     private boolean leftStop = false;
 
     private double tileMatLength = 12*2;  // Inches
+
+    double localTargetTick;
 
     // Calculates the circumference for the Odometry pods
     // Divides by 25.4 to change mm to inches
@@ -75,24 +75,30 @@ public class OdometryPods extends LinearOpMode {
         waitForStart();
         resetTicks();
 
-        strafeRight(InchesToTicks(tileMatLength), -0.2);
-        sleep(1000*10);
-        driveForward(InchesToTicks(tileMatLength/2.0));
-        sleep(1000*10);
-        driveBackward(InchesToTicks(tileMatLength/2.0));
-        sleep(1000*10);
-        strafeRight(InchesToTicks(tileMatLength*2.0), -0.2);
-        sleep(1000*10);
-        driveBackward(InchesToTicks(tileMatLength*1.2));
+        localTargetTick = InchesToTicks(tileMatLength*0.12);
+
+        strafeRight(localTargetTick, -0.4, 1);
+        sleep(1000);
+
+        localTargetTick = (InchesToTicks(tileMatLength/2.0));
+        driveForward(localTargetTick, -0.5, 1);
+
+        localTargetTick = (InchesToTicks(tileMatLength/2.2));
+        driveBackward(localTargetTick, -0.5, 1);
+
+        localTargetTick = InchesToTicks(tileMatLength*2.0);
+        strafeRight(localTargetTick, -0.4, 1);
+
+        localTargetTick = InchesToTicks(tileMatLength*0.2);
+        driveBackward(localTargetTick, -0.5, 1);
+
 
         telemAllTicks("None");
-
-        sleep(10000);
     }
 
-    public void driveForward(double targetTicks) {
+    public void driveForward(double targetTicks, double power, long sleep) {
         resetTicks();
-        setAllPower(-0.5);
+        setAllPower(power);
 
         telemAllTicks("Forward");
 
@@ -114,11 +120,13 @@ public class OdometryPods extends LinearOpMode {
 
         stopAllPower();
         resetTicks();
+
+        sleep(1000*sleep);
     }
 
-    public void driveBackward(double targetTicks) {
+    public void driveBackward(double targetTicks, double power, long sleep) {
         resetTicks();
-        setAllPower(0.5);
+        setAllPower(-power);
 
         telemAllTicks("Backward");
 
@@ -139,11 +147,13 @@ public class OdometryPods extends LinearOpMode {
         leftStop = false;
         stopAllPower();
         resetTicks();
+
+        sleep(1000*sleep);
     }
 
-    public void strafeRight(double targetTicks, double power) {
-        resetTicks();
+    public void strafeRight(double targetTicks, double power, long sleep) {
         setStrafingDrive();
+        resetTicks();
         setAllPower(power);
 
         telemAllTicks("Right");
@@ -157,7 +167,10 @@ public class OdometryPods extends LinearOpMode {
         stopAllPower();
         resetTicks();
         setNormalDrive();
+
+        sleep(1000*sleep);
     }
+
 
     public void setNormalDrive(){
         FR.setDirection(DcMotorSimple.Direction.REVERSE);
