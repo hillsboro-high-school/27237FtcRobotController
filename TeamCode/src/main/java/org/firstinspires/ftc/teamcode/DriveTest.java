@@ -34,6 +34,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 /*
@@ -74,6 +75,8 @@ public class DriveTest extends LinearOpMode {
     private DcMotor leftBackDrive = null;
     private DcMotor rightFrontDrive = null;
     private DcMotor rightBackDrive = null;
+    private DcMotor armSlidesM = null;
+    Servo armAxelS;
 
     @Override
     public void runOpMode() {
@@ -84,6 +87,10 @@ public class DriveTest extends LinearOpMode {
         leftBackDrive  = hardwareMap.get(DcMotor.class, "left_back_drive");
         rightFrontDrive = hardwareMap.get(DcMotor.class, "right_front_drive");
         rightBackDrive = hardwareMap.get(DcMotor.class, "right_back_drive");
+
+        armSlidesM = hardwareMap.get(DcMotor.class, "arm_slides");
+        armAxelS = hardwareMap.get(Servo.class, "arm_axel");
+
 
         // ########################################################################################
         // !!!            IMPORTANT Drive Information. Test your motor directions.            !!!!!
@@ -100,7 +107,6 @@ public class DriveTest extends LinearOpMode {
         leftBackDrive.setDirection(DcMotor.Direction.FORWARD);  // 2
         rightFrontDrive.setDirection(DcMotor.Direction.REVERSE);  // 1
         rightBackDrive.setDirection(DcMotor.Direction.REVERSE);  // 0
-
         // Wait for the game to start (driver presses START)
         telemetry.addData("Status", "Initialized");
         telemetry.update();
@@ -139,6 +145,17 @@ public class DriveTest extends LinearOpMode {
                 rightBackPower  /= max;
             }
 
+            // Needs testing
+            if (gamepad1.right_trigger > 0){
+                telemetry.addData("Right Trigger Output", gamepad1.right_trigger);
+                telemetry.update();
+            }
+
+            if (gamepad1.right_trigger == 0){
+                telemetry.addData("Right Trigger Output", gamepad1.right_trigger);
+                telemetry.update();
+            }
+
             // This is test code:
             //
             // Uncomment the following code to test your motor directions.
@@ -147,7 +164,7 @@ public class DriveTest extends LinearOpMode {
             //      by adjusting your Robot Configuration if necessary.
             //   2) Then make sure they run in the correct direction by modifying the
             //      the setDirection() calls above.
-            // Once the correct motors move in the correct direction re-comment this code.
+            // Once the correct motors move in the correct direction re-comment this code
 
             /*
             leftFrontPower  = gamepad1.x ? 1.0 : 0.0;  // X gamepad
@@ -157,10 +174,10 @@ public class DriveTest extends LinearOpMode {
             */
 
             // Send calculated power to wheels
-            leftFrontDrive.setPower(leftFrontPower);
-            rightFrontDrive.setPower(rightFrontPower);
-            leftBackDrive.setPower(leftBackPower);
-            rightBackDrive.setPower(rightBackPower);
+            leftFrontDrive.setPower(leftFrontPower / 1.5);
+            rightFrontDrive.setPower(rightFrontPower / 1.5);
+            leftBackDrive.setPower(leftBackPower / 1.5);
+            rightBackDrive.setPower(rightBackPower / 1.5);
 
             // Show the elapsed game time and wheel power.
             telemetry.addData("Status", "Run Time: " + runtime.toString());

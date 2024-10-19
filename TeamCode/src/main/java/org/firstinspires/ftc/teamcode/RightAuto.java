@@ -4,6 +4,7 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 @Autonomous(name="RightAuto", group="Linear OpMode")
 
@@ -15,6 +16,9 @@ public class RightAuto extends LinearOpMode {
     private DcMotor BL = null;
     private DcMotor FR = null;
     private DcMotor BR = null;
+
+    private DcMotor armSlidesM = null;
+    Servo armAxelS;
 
     private DcMotor leftEncoderMotor = null;
     private double leftEncoderPos = 0;
@@ -50,6 +54,9 @@ public class RightAuto extends LinearOpMode {
         BL = hardwareMap.get(DcMotor.class, "left_back_drive");
         FR = hardwareMap.get(DcMotor.class, "right_front_drive");
         BR = hardwareMap.get(DcMotor.class, "right_back_drive");
+
+        armSlidesM = hardwareMap.get(DcMotor.class, "arm_slides");
+        armAxelS = hardwareMap.get(Servo.class, "arm_axel");
 
         leftEncoderMotor = hardwareMap.get(DcMotor.class, "left_front_drive");
         rightEncoderMotor = hardwareMap.get(DcMotor.class, "right_front_drive");

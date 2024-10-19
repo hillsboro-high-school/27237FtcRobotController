@@ -4,6 +4,7 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 @Autonomous(name="LeftAuto", group="Linear OpMode")
 
@@ -15,6 +16,10 @@ public class LeftAuto extends LinearOpMode {
     private DcMotor BL = null;
     private DcMotor FR = null;
     private DcMotor BR = null;
+
+    private DcMotor armSlidesM = null;
+
+    Servo armAxelS;
 
     private DcMotor leftEncoderMotor = null;
     private double leftEncoderPos = 0;
@@ -51,9 +56,11 @@ public class LeftAuto extends LinearOpMode {
         FR = hardwareMap.get(DcMotor.class, "right_front_drive");
         BR = hardwareMap.get(DcMotor.class, "right_back_drive");
 
-        leftEncoderMotor = hardwareMap.get(DcMotor.class, "left_front_drive");
-        rightEncoderMotor = hardwareMap.get(DcMotor.class, "right_front_drive");
-        centerEncoderMotor = hardwareMap.get(DcMotor.class, "left_back_drive");
+        armSlidesM = hardwareMap.get(DcMotor.class, "arm_slides");
+        armAxelS = hardwareMap.get(Servo.class, "arm_axel");
+
+        rightEncoderMotor = hardwareMap.get(DcMotor.class, "right_front_drive");  // 2
+        leftEncoderMotor = hardwareMap.get(DcMotor.class, "left_front_drive");  // 3
 
         leftEncoderMotor.setDirection(DcMotorSimple.Direction.FORWARD);  // Directions taken from BlackBoxBot.java
         rightEncoderMotor.setDirection(DcMotorSimple.Direction.REVERSE);
@@ -76,9 +83,7 @@ public class LeftAuto extends LinearOpMode {
         resetTicks();
 
         localTargetTick = InchesToTicks(tileMatLength*0.12);
-
         strafeRight(localTargetTick, -0.4, 1);
-        sleep(1000);
 
         localTargetTick = (InchesToTicks(tileMatLength/2.0));
         driveForward(localTargetTick, -0.5, 1);
@@ -111,6 +116,7 @@ public class LeftAuto extends LinearOpMode {
                 leftStop = true;
                 stopLeftPower();
             }
+            telemAllTicks("Forward");
         }
 
         telemAllTicks("Forward");
@@ -139,6 +145,7 @@ public class LeftAuto extends LinearOpMode {
                 leftStop = true;
                 stopLeftPower();
             }
+            telemAllTicks("Backward");
         }
 
         telemAllTicks("Backward");
@@ -159,7 +166,7 @@ public class LeftAuto extends LinearOpMode {
         telemAllTicks("Right");
 
         while (getCenterTicks() < targetTicks){
-
+            telemAllTicks("Right");
         }
 
         telemAllTicks("Right");
