@@ -5,9 +5,9 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.ElapsedTime;
-@Autonomous(name="LeftBlueAuto", group="Linear OpMode")
+@Autonomous(name="LeftAuto", group="Linear OpMode")
 
-public class LeftBlueAuto extends LinearOpMode {
+public class LeftAuto extends LinearOpMode {
 
     // Declare OpMode members for each of the 4 motors.
     private ElapsedTime runtime = new ElapsedTime();
