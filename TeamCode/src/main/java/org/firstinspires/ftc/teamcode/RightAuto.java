@@ -85,22 +85,22 @@ public class RightAuto extends LinearOpMode {
         localTargetTick = InchesToTicks(tileMatLength*0.9);
         strafeRight(localTargetTick, -0.4, 1);
 
-        localTargetTick = (InchesToTicks(tileMatLength*2.75));
+        localTargetTick = (InchesToTicks(tileMatLength*2.85));
         driveForward(localTargetTick, -0.5, 1);
 
-        localTargetTick = InchesToTicks(tileMatLength*0.5);
+        localTargetTick = InchesToTicks(tileMatLength*0.8);
         strafeLeft(localTargetTick, -0.4, 1);
 
-        localTargetTick = (InchesToTicks(tileMatLength*0.9));
+        localTargetTick = (InchesToTicks(tileMatLength*0.5));
+        driveBackward(localTargetTick, -0.5, 1);
+
+        localTargetTick = InchesToTicks(tileMatLength*0.9);
+        strafeRight(localTargetTick, -0.4, 1);
+
+        localTargetTick = (InchesToTicks(tileMatLength*4.0));
         driveBackward(localTargetTick, -0.5, 1);
 
         localTargetTick = InchesToTicks(tileMatLength*0.5);
-        strafeRight(localTargetTick, -0.4, 1);
-
-        localTargetTick = (InchesToTicks(tileMatLength*3.5));
-        driveBackward(localTargetTick, -0.5, 1);
-
-        localTargetTick = InchesToTicks(tileMatLength*0.6);
         strafeLeft(localTargetTick, -0.4, 1);
 
 
@@ -189,7 +189,7 @@ public class RightAuto extends LinearOpMode {
 
         telemAllTicks("Left");
 
-        while (getCenterTicks() > targetTicks){
+        while (Math.abs(getCenterTicks()) < targetTicks){
             telemAllTicks("Left");
         }
 

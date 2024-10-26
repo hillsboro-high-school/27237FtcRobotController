@@ -188,7 +188,7 @@ public class LeftAuto extends LinearOpMode {
 
         telemAllTicks("Left");
 
-        while (getCenterTicks() > targetTicks){
+        while (Math.abs(getCenterTicks()) < targetTicks){
             telemAllTicks("Left");
         }
 
