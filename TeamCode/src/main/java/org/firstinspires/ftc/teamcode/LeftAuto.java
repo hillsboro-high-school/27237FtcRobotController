@@ -18,7 +18,6 @@ public class LeftAuto extends LinearOpMode {
     private DcMotor BR = null;
 
     private DcMotor armSlidesM = null;
-
     Servo armAxelS;
 
     private DcMotor leftEncoderMotor = null;
@@ -59,8 +58,9 @@ public class LeftAuto extends LinearOpMode {
         armSlidesM = hardwareMap.get(DcMotor.class, "arm_slides");
         armAxelS = hardwareMap.get(Servo.class, "arm_axel");
 
-        rightEncoderMotor = hardwareMap.get(DcMotor.class, "right_front_drive");  // 2
-        leftEncoderMotor = hardwareMap.get(DcMotor.class, "left_front_drive");  // 3
+        leftEncoderMotor = hardwareMap.get(DcMotor.class, "left_front_drive");
+        rightEncoderMotor = hardwareMap.get(DcMotor.class, "right_front_drive");
+        centerEncoderMotor = hardwareMap.get(DcMotor.class, "left_back_drive");
 
         leftEncoderMotor.setDirection(DcMotorSimple.Direction.FORWARD);  // Directions taken from BlackBoxBot.java
         rightEncoderMotor.setDirection(DcMotorSimple.Direction.REVERSE);
@@ -85,17 +85,20 @@ public class LeftAuto extends LinearOpMode {
         localTargetTick = InchesToTicks(tileMatLength*0.12);
         strafeRight(localTargetTick, -0.4, 1);
 
-        localTargetTick = (InchesToTicks(tileMatLength/2.0));
+        localTargetTick = (InchesToTicks(tileMatLength*0.8));
         driveForward(localTargetTick, -0.5, 1);
 
-        localTargetTick = (InchesToTicks(tileMatLength/2.2));
+        localTargetTick = (InchesToTicks(tileMatLength*0.8));
         driveBackward(localTargetTick, -0.5, 1);
 
-        localTargetTick = InchesToTicks(tileMatLength*2.0);
+        localTargetTick = InchesToTicks(tileMatLength*0.8);
         strafeRight(localTargetTick, -0.4, 1);
 
-        localTargetTick = InchesToTicks(tileMatLength*0.2);
+        localTargetTick = (InchesToTicks(tileMatLength*3.5));
         driveBackward(localTargetTick, -0.5, 1);
+
+        localTargetTick = InchesToTicks(tileMatLength*0.6);
+        strafeLeft(localTargetTick, -0.4, 1);
 
 
         telemAllTicks("None");
@@ -170,6 +173,26 @@ public class LeftAuto extends LinearOpMode {
         }
 
         telemAllTicks("Right");
+
+        stopAllPower();
+        resetTicks();
+        setNormalDrive();
+
+        sleep(1000*sleep);
+    }
+
+    public void strafeLeft(double targetTicks, double power, long sleep) {
+        setStrafingDrive();
+        resetTicks();
+        setAllPower(-power);
+
+        telemAllTicks("Left");
+
+        while (getCenterTicks() > targetTicks){
+            telemAllTicks("Left");
+        }
+
+        telemAllTicks("Left");
 
         stopAllPower();
         resetTicks();

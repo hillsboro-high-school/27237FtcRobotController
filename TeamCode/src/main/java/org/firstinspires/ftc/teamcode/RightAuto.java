@@ -82,20 +82,26 @@ public class RightAuto extends LinearOpMode {
         waitForStart();
         resetTicks();
 
-        localTargetTick = InchesToTicks(tileMatLength*0.12);
+        localTargetTick = InchesToTicks(tileMatLength*0.9);
         strafeRight(localTargetTick, -0.4, 1);
 
         localTargetTick = (InchesToTicks(tileMatLength*2.75));
         driveForward(localTargetTick, -0.5, 1);
 
-        localTargetTick = (InchesToTicks(tileMatLength/2.2));
+        localTargetTick = InchesToTicks(tileMatLength*0.5);
+        strafeLeft(localTargetTick, -0.4, 1);
+
+        localTargetTick = (InchesToTicks(tileMatLength*0.9));
         driveBackward(localTargetTick, -0.5, 1);
 
-        localTargetTick = InchesToTicks(tileMatLength*2.0);
+        localTargetTick = InchesToTicks(tileMatLength*0.5);
         strafeRight(localTargetTick, -0.4, 1);
 
-        localTargetTick = InchesToTicks(tileMatLength*0.66);
+        localTargetTick = (InchesToTicks(tileMatLength*3.5));
         driveBackward(localTargetTick, -0.5, 1);
+
+        localTargetTick = InchesToTicks(tileMatLength*0.6);
+        strafeLeft(localTargetTick, -0.4, 1);
 
 
         telemAllTicks("None");
@@ -168,6 +174,26 @@ public class RightAuto extends LinearOpMode {
         }
 
         telemAllTicks("Right");
+
+        stopAllPower();
+        resetTicks();
+        setNormalDrive();
+
+        sleep(1000*sleep);
+    }
+
+    public void strafeLeft(double targetTicks, double power, long sleep) {
+        setStrafingDrive();
+        resetTicks();
+        setAllPower(-power);
+
+        telemAllTicks("Left");
+
+        while (getCenterTicks() > targetTicks){
+            telemAllTicks("Left");
+        }
+
+        telemAllTicks("Left");
 
         stopAllPower();
         resetTicks();
