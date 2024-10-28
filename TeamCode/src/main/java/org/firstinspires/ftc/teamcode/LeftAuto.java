@@ -82,6 +82,10 @@ public class LeftAuto extends LinearOpMode {
         waitForStart();
         resetTicks();
 
+        /*
+        Setting up andriod studio on my home computer
+         */
+
         localTargetTick = InchesToTicks(tileMatLength*0.12);
         strafeRight(localTargetTick, -0.4, 1);
 
