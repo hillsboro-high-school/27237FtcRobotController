@@ -82,10 +82,72 @@ public class LeftAuto extends LinearOpMode {
         waitForStart();
         resetTicks();
 
-        /*
-        Setting up andriod studio on my home computer
+        /* Protoype Meet 1 Code
+
+        !!! ALL TARGET TICKS ARE ESTIMATED !!!
+        !!! NEED MORE HARDWARE BEFORE WE CAN TEST ANYTHING !!!
+        !*!*!*! THIS IS JUST PROTOTYPING CODE, WILL NEED MAJOR TWEAKING !*!*!*!
+
+        *** Variables needed ***
+        String sampleColor = color sensor reading on arm
+        String allianceColor = color sensor reading of alliance marker
+        String oppenentColor;
+
+        *** Chicken scratch code ***
+
+        if allianceColor == "blue"{
+        opponentColor = "red"
+        }
+        else{
+        openentColor = "blue"
+        }
+
+        localTargetTick = InchesToTicks(tileMatLength);
+        driveForward(localTargetTick, -0.5, 1);
+
+        ARM CODE:
+            -- Hang starting specimen
+            -- Grab another Sample from sub
+
+         if (sampleColor == "yellow"){
+            move to bucket
+            left = True (this will be for later)
+            localTargetTick = InchesToTicks(tileMatLength*1.5);
+            strafeLeft(localTargetTick, -0.4, 1);
+         }
+
+         else if(sampleColor == allianceColor){
+            move to obs
+            right = True (this will be for later)
+            localTargetTick = InchesToTicks(tileMatLength*2);
+            strafeRight(localTargetTick, -0.4, 1);
+         }
+
+         else if (sampleColor == oppenentColor){
+            EITHER:
+            -keep looking
+            OR:
+            -cycle left and right sides
+         }
+
+         if (left == True && camera doesnt detect alliance partner){
+            cycle all three yellow samples into baskets (perferably high)
+         }
+         else if (right == True && camera doesnt detect alliance partner){
+            cycle all three alliance colored samples into observation
+         }
+
+
+         Notes:
+         Encapsulate in while loop and check if time is about to run out so there is enough time to park
+         5-10 seconds should be when the park code exucutes
+
+         Do same thing for right ?? or get rid of right and only have one autonoumous.
+         Also use intergrate camera for positioning so we dont need exact starting locations
+         I also think we should put the camera on a servor so it faces the direction the robot is facing.
          */
 
+        // Meet 0 Code
         localTargetTick = InchesToTicks(tileMatLength*0.12);
         strafeRight(localTargetTick, -0.4, 1);
 
@@ -201,6 +263,58 @@ public class LeftAuto extends LinearOpMode {
         stopAllPower();
         resetTicks();
         setNormalDrive();
+
+        sleep(1000*sleep);
+    }
+
+
+    /* These turn functions where types without a complier so idk if its messed up
+    // Needs to be tested too because i just used triganometry
+    *** EXPLINATION ***
+    Adjacnet = Y odo pod
+    Oposite = X odo pod
+    Hypotenuse = Target Ticks (Tt)
+    Sin(theta) = X-odo-pod/Tt THEREFORE opposite = Tt*sin(theta)
+    Cos(theta) = Y-odo-pod/Tt THEREFORE adjancent = Tt*cos(theta)
+    Theta = double variable we feed into function, might need to make it solve for theta but this should be fine for now
+     */
+
+    public void turnLeft(double targetTicks, double power, long sleep, double theta){
+        resetTicks();
+        setRightPower(power);
+        telemAllTicks("Turning Left");
+
+        centerTargetTicks = targetTicks*Math.sin(theta);
+        rightTargetTicks = targetTicks*Math.cos(theta);
+
+        while (getCenterTicks() < centerTargeTicks && getRightTicks() < rightTargetTicks){
+            telemAllTicks("Turning Left");
+        }
+
+        telemAllTicks("Turning Left");
+
+        stopRightPower();
+        resetTicks();
+
+        sleep(1000*sleep);
+    }
+
+    public void turnRight(double targetTicks, double power, long sleep, double theta){
+        resetTicks();
+        setLeftPower(power);
+        telemAllTicks("Turning Right");
+
+        centerTargetTicks = targetTicks*Math.sin(theta);
+        leftTargetTicks = targetTicks*Math.cos(theta);
+
+        while (getCenterTicks() < centerTargeTicks && getLeftTicks() < leftTargetTicks){
+            telemAllTicks("Turning Right");
+        }
+
+        telemAllTicks("Turning Right");
+
+        stopLeftPower();
+        resetTicks();
 
         sleep(1000*sleep);
     }
