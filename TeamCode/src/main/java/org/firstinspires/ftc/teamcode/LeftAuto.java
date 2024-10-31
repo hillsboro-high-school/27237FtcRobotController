@@ -45,6 +45,9 @@ public class LeftAuto extends LinearOpMode {
     // Divides by 25.4 to change mm to inches
     double OPcircumference = 2.0*Math.PI*(16.0/25.4);
 
+    double robotDiameter = 16.0;  // Inches
+    double robotCircumference = Math.PI*robotDiameter;
+
     @Override
     public void runOpMode() {
 
@@ -147,7 +150,10 @@ public class LeftAuto extends LinearOpMode {
          I also think we should put the camera on a servor so it faces the direction the robot is facing.
          */
 
-        // Meet 0 Code
+        localTargetTick = InchesToTicks(tileMatLength);
+        turnRight(localTargetTick, -0.4, 10, 45);
+
+        /* Meet 0 Code
         localTargetTick = InchesToTicks(tileMatLength*0.12);
         strafeRight(localTargetTick, -0.4, 1);
 
@@ -165,6 +171,7 @@ public class LeftAuto extends LinearOpMode {
 
         localTargetTick = InchesToTicks(tileMatLength*0.6);
         strafeLeft(localTargetTick, -0.4, 1);
+         */
 
 
         telemAllTicks("None");
@@ -284,10 +291,10 @@ public class LeftAuto extends LinearOpMode {
         setRightPower(power);
         telemAllTicks("Turning Left");
 
-        centerTargetTicks = targetTicks*Math.sin(theta);
-        rightTargetTicks = targetTicks*Math.cos(theta);
+        double centerTargetTicks = targetTicks*Math.sin(theta);
+        double rightTargetTicks = targetTicks*Math.cos(theta);
 
-        while (getCenterTicks() < centerTargeTicks && getRightTicks() < rightTargetTicks){
+        while (getCenterTicks() < centerTargetTicks && getRightTicks() < rightTargetTicks){
             telemAllTicks("Turning Left");
         }
 
@@ -302,18 +309,18 @@ public class LeftAuto extends LinearOpMode {
     public void turnRight(double targetTicks, double power, long sleep, double theta){
         resetTicks();
         setLeftPower(power);
-        telemAllTicks("Turning Right");
+        setRightPower(-power);
 
-        centerTargetTicks = targetTicks*Math.sin(theta);
-        leftTargetTicks = targetTicks*Math.cos(theta);
+        double arcLength =(theta/360) * robotCircumference;
+        double centerTargetTicks = arcLength/OPcircumference;
 
-        while (getCenterTicks() < centerTargeTicks && getLeftTicks() < leftTargetTicks){
+        while (getCenterTicks() <= centerTargetTicks){
             telemAllTicks("Turning Right");
         }
 
         telemAllTicks("Turning Right");
 
-        stopLeftPower();
+        stopAllPower();
         resetTicks();
 
         sleep(1000*sleep);
