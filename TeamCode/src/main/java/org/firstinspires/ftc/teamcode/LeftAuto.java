@@ -6,6 +6,12 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
+import com.qualcomm.robotcore.hardware.IMU;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.AngularVelocity;
+import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
+
 @Autonomous(name="LeftAuto", group="Linear OpMode")
 
 public class LeftAuto extends LinearOpMode {
@@ -32,8 +38,6 @@ public class LeftAuto extends LinearOpMode {
     private double centerEncoderPos = 0;
     private double deltaCenterEncoder = 0;
 
-    private double theta = 0;
-
     private boolean rightStop = false;
     private boolean leftStop = false;
 
@@ -45,8 +49,10 @@ public class LeftAuto extends LinearOpMode {
     // Divides by 25.4 to change mm to inches
     double OPcircumference = 2.0*Math.PI*(16.0/25.4);
 
-    double robotDiameter = 16.0;  // Inches
-    double robotCircumference = Math.PI*robotDiameter;
+    double yaw;
+
+    double curAngle = 0;
+    IMU imu;
 
     @Override
     public void runOpMode() {
@@ -65,6 +71,8 @@ public class LeftAuto extends LinearOpMode {
         rightEncoderMotor = hardwareMap.get(DcMotor.class, "right_front_drive");
         centerEncoderMotor = hardwareMap.get(DcMotor.class, "left_back_drive");
 
+        imu = hardwareMap.get(IMU.class, "imu");
+
         leftEncoderMotor.setDirection(DcMotorSimple.Direction.FORWARD);  // Directions taken from BlackBoxBot.java
         rightEncoderMotor.setDirection(DcMotorSimple.Direction.REVERSE);
         centerEncoderMotor.setDirection(DcMotorSimple.Direction.FORWARD);
@@ -74,16 +82,30 @@ public class LeftAuto extends LinearOpMode {
         BR.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         BL.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
+        RevHubOrientationOnRobot.LogoFacingDirection logoDirection = RevHubOrientationOnRobot.LogoFacingDirection.UP;
+        RevHubOrientationOnRobot.UsbFacingDirection  usbDirection  = RevHubOrientationOnRobot.UsbFacingDirection.RIGHT;
+
+        RevHubOrientationOnRobot orientationOnRobot = new RevHubOrientationOnRobot(logoDirection, usbDirection);
+
+        // Now initialize the IMU with this mounting orientation
+        // Note: if you choose two conflicting directions, this initialization will cause a code exception.
+        imu.initialize(new IMU.Parameters(orientationOnRobot));
+        imu.resetYaw();
+
+        YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
+        yaw = orientation.getYaw();
+
         resetTicks();
         setNormalDrive();  // Sets all motors to correct forward/reverse
 
         // Send telemetry message to signify robot waiting;
-        telemetry.addData("Status", "Ready to run");
-        telemetry.update();
+        telemIMUOrientation(orientation, yaw);
 
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
         resetTicks();
+
+        while (opModeIsActive()) {
 
         /* Protoype Meet 1 Code
 
@@ -143,15 +165,21 @@ public class LeftAuto extends LinearOpMode {
 
          Notes:
          Encapsulate in while loop and check if time is about to run out so there is enough time to park
-         5-10 seconds should be when the park code exucutes
+         5-10 seconds should be when the park code executes
 
          Do same thing for right ?? or get rid of right and only have one autonoumous.
-         Also use intergrate camera for positioning so we dont need exact starting locations
+         Also integrate camera for positioning so we don't need exact starting locations
          I also think we should put the camera on a servor so it faces the direction the robot is facing.
          */
 
-        localTargetTick = InchesToTicks(tileMatLength);
-        turnRight(localTargetTick, -0.4, 10, 45);
+            curAngle = turnLeft(-0.3, 2, 90, orientation, curAngle);
+            curAngle = turnRight(-0.3, 2, 180, orientation, curAngle);
+            curAngle = turnLeft(-0.3, 2, 270, orientation, curAngle);
+            curAngle = turnRight(-0.3, 2, 359, orientation,curAngle);
+            curAngle = turnLeft(-0.3, 2, 180, orientation, curAngle);  // 360 and 0 degrees don't work with IMU
+            curAngle = turnRight(-0.3, 2, 45, orientation, curAngle);
+
+            telemIMUOrientation(orientation, yaw);
 
         /* Meet 0 Code
         localTargetTick = InchesToTicks(tileMatLength*0.12);
@@ -174,7 +202,9 @@ public class LeftAuto extends LinearOpMode {
          */
 
 
-        telemAllTicks("None");
+            telemAllTicks("None");
+            break;
+        }
     }
 
     public void driveForward(double targetTicks, double power, long sleep) {
@@ -276,55 +306,53 @@ public class LeftAuto extends LinearOpMode {
 
 
     /* These turn functions where types without a complier so idk if its messed up
-    // Needs to be tested too because i just used triganometry
-    *** EXPLINATION ***
-    Adjacnet = Y odo pod
-    Oposite = X odo pod
-    Hypotenuse = Target Ticks (Tt)
-    Sin(theta) = X-odo-pod/Tt THEREFORE opposite = Tt*sin(theta)
-    Cos(theta) = Y-odo-pod/Tt THEREFORE adjancent = Tt*cos(theta)
-    Theta = double variable we feed into function, might need to make it solve for theta but this should be fine for now
      */
-
-    public void turnLeft(double targetTicks, double power, long sleep, double theta){
-        resetTicks();
+    public double turnLeft(double power, long sleep, double angle, YawPitchRollAngles orientation, double curAngle){
         setRightPower(power);
-        telemAllTicks("Turning Left");
+        setLeftPower(-power);
 
-        double centerTargetTicks = targetTicks*Math.sin(theta);
-        double rightTargetTicks = targetTicks*Math.cos(theta);
+        double yaw = orientation.getYaw();
+        double targetAngle = curAngle + angle;
 
-        while (getCenterTicks() < centerTargetTicks && getRightTicks() < rightTargetTicks){
-            telemAllTicks("Turning Left");
+        while(leftYawConversion(yaw) <= targetAngle){
+            orientation = imu.getRobotYawPitchRollAngles();
+            yaw = orientation.getYaw();
+            telemIMUOrientation(orientation, yaw);
         }
-
-        telemAllTicks("Turning Left");
-
-        stopRightPower();
-        resetTicks();
-
-        sleep(1000*sleep);
-    }
-
-    public void turnRight(double targetTicks, double power, long sleep, double theta){
-        resetTicks();
-        setLeftPower(power);
-        setRightPower(-power);
-
-        double arcLength =(theta/360) * robotCircumference;
-        double centerTargetTicks = arcLength/OPcircumference;
-
-        while (getCenterTicks() <= centerTargetTicks){
-            telemAllTicks("Turning Right");
-        }
-
-        telemAllTicks("Turning Right");
 
         stopAllPower();
         resetTicks();
 
+        telemIMUOrientation(orientation, yaw);
+
         sleep(1000*sleep);
+
+        return ((curAngle+yaw)%360);
     }
+
+    public double turnRight(double power, long sleep, double angle, YawPitchRollAngles orientation, double curAngle){
+        setLeftPower(power);
+        setRightPower(-power);
+
+        double yaw = orientation.getYaw();
+        double targetAngle = curAngle + (-angle);
+
+        while(rightYawConversion(yaw) <= targetAngle){
+            orientation = imu.getRobotYawPitchRollAngles();
+            yaw = orientation.getYaw();
+            telemIMUOrientation(orientation, yaw);
+        }
+
+        stopAllPower();
+        resetTicks();
+
+        telemIMUOrientation(orientation, yaw);
+
+        sleep(1000*sleep);
+
+        return((curAngle + yaw) % 360);
+    }
+
 
 
     public void setNormalDrive(){
@@ -412,6 +440,32 @@ public class LeftAuto extends LinearOpMode {
         telemetry.addData("Right pos", getRightTicks());
         telemetry.addData("Center pos", getCenterTicks());
         telemetry.update();
+    }
+
+    public void telemIMUOrientation(YawPitchRollAngles orientation, double yaw){
+        telemetry.addData("Yaw (Z)", "%.2f Deg. (Heading)", orientation.getYaw(AngleUnit.DEGREES));
+        telemetry.addData("Pitch (X)", "%.2f Deg.", orientation.getPitch(AngleUnit.DEGREES));
+        telemetry.addData("Roll (Y)", "%.2f Deg.\n", orientation.getRoll(AngleUnit.DEGREES));
+        telemetry.addData("Var Yaw", yaw);
+        telemetry.update();
+    }
+
+    public double rightYawConversion(double yaw){
+        if (yaw <= -1){
+            return (yaw*-1);
+        }
+        else{
+            return (360 - yaw);
+        }
+    }
+
+    public double leftYawConversion(double yaw){
+        if (yaw <= -1){
+            return (yaw+360);
+        }
+        else{
+            return yaw;
+        }
     }
 
     public double TicksToInches(double ticks){
