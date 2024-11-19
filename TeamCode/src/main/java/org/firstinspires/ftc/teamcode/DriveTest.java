@@ -75,8 +75,22 @@ public class DriveTest extends LinearOpMode {
     private DcMotor leftBackDrive = null;
     private DcMotor rightFrontDrive = null;
     private DcMotor rightBackDrive = null;
-    private DcMotor armSlidesM = null;
-    Servo armAxelS;
+    private DcMotor leftArmSlidesM = null;
+    private DcMotor rightArmSlidesM = null;
+    private DcMotor armAxelM = null;
+    Servo clawS;
+
+    private double slide_pos = 0;
+
+    private double axel_pos = 0;
+
+    private int get_arm_pos(){
+            return leftArmSlidesM.getCurrentPosition();
+    }
+
+    private int get_axel_pos(){
+            return armAxelM.getCurrentPosition();
+    }
 
     @Override
     public void runOpMode() {
@@ -88,9 +102,18 @@ public class DriveTest extends LinearOpMode {
         rightFrontDrive = hardwareMap.get(DcMotor.class, "right_front_drive");
         rightBackDrive = hardwareMap.get(DcMotor.class, "right_back_drive");
 
-        armSlidesM = hardwareMap.get(DcMotor.class, "arm_slides");
-        armAxelS = hardwareMap.get(Servo.class, "arm_axel");
+        // M = Motor
+        // S = Servo
 
+        leftArmSlidesM = hardwareMap.get(DcMotor.class, "left_arm_slides");
+        rightArmSlidesM = hardwareMap.get(DcMotor.class, "right_arm_slides");
+
+        armAxelM = hardwareMap.get(DcMotor.class, "arm_axel");
+
+        clawS = hardwareMap.get(Servo.class, "claw");
+
+        leftArmSlidesM.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        armAxelM.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         // ########################################################################################
         // !!!            IMPORTANT Drive Information. Test your motor directions.            !!!!!
@@ -104,9 +127,9 @@ public class DriveTest extends LinearOpMode {
         // Keep testing until ALL the wheels move the robot forward when you push the left joystick forward.
 
         leftFrontDrive.setDirection(DcMotor.Direction.FORWARD); // 3
-        leftBackDrive.setDirection(DcMotor.Direction.FORWARD);  // 2
+        leftBackDrive.setDirection(DcMotor.Direction.REVERSE);  // 2
         rightFrontDrive.setDirection(DcMotor.Direction.REVERSE);  // 1
-        rightBackDrive.setDirection(DcMotor.Direction.REVERSE);  // 0
+        rightBackDrive.setDirection(DcMotor.Direction.FORWARD);  // 0
         // Wait for the game to start (driver presses START)
         telemetry.addData("Status", "Initialized");
         telemetry.update();
@@ -119,9 +142,9 @@ public class DriveTest extends LinearOpMode {
             double max;
 
             // POV Mode uses left joystick to go forward & strafe, and right joystick to rotate.
-            double axial   = gamepad1.left_stick_y;
-            double lateral =  gamepad1.left_stick_x;
-            double yaw     =  -gamepad1.right_stick_x;
+            double axial   = -gamepad1.left_stick_y;
+            double yaw =  gamepad1.left_stick_x;
+            double lateral  = gamepad1.right_stick_x;
 
             // Combine the joystick requests for each axis-motion to determine each wheel's power.
             // Set up a variable for each drive wheel to save the power level for telemetry.
@@ -145,45 +168,62 @@ public class DriveTest extends LinearOpMode {
                 rightBackPower  /= max;
             }
 
-            // Needs testing
-            if (gamepad1.right_trigger > 0){
-                telemetry.addData("Right Trigger Output", gamepad1.right_trigger);
-                telemetry.update();
+            // Sends Calculated Power to Wheels
+            leftFrontDrive.setPower(leftFrontPower/1.5);
+            rightFrontDrive.setPower(rightFrontPower/1.5);
+            leftBackDrive.setPower(leftBackPower/1.5);
+            rightBackDrive.setPower(rightBackPower/1.5);
+
+
+            if (gamepad1.right_trigger > 0 && axel_pos > 4000 && slide_pos < 2000) {
+                leftArmSlidesM.setPower(0.8);  // Slides EXTEND
+                rightArmSlidesM.setPower(-0.8);
+            }
+            else if(gamepad1.right_trigger > 0 && axel_pos < 0 && slide_pos <= 3000){
+                leftArmSlidesM.setPower(0.8);  // Slides EXTEND
+                rightArmSlidesM.setPower(-0.8);
             }
 
-            if (gamepad1.right_trigger == 0){
-                telemetry.addData("Right Trigger Output", gamepad1.right_trigger);
-                telemetry.update();
+            else if (gamepad1.left_trigger > 0){
+                    leftArmSlidesM.setPower(-0.8); // Slides DESCEND
+                    rightArmSlidesM.setPower(0.8);
+            }
+            else {
+                    leftArmSlidesM.setPower(0); // Slides DON'T MOVE
+                    rightArmSlidesM.setPower(0);
             }
 
-            // This is test code:
-            //
-            // Uncomment the following code to test your motor directions.
-            // Each button should make the corresponding motor run FORWARD.
-            //   1) First get all the motors to take to correct positions on the robot
-            //      by adjusting your Robot Configuration if necessary.
-            //   2) Then make sure they run in the correct direction by modifying the
-            //      the setDirection() calls above.
-            // Once the correct motors move in the correct direction re-comment this code
+            telemetry.addData("Slide pos", slide_pos);
+            telemetry.addData("Axel pos", axel_pos);
+            telemetry.update();
 
-            /*
-            leftFrontPower  = gamepad1.x ? 1.0 : 0.0;  // X gamepad
-            leftBackPower   = gamepad1.a ? 1.0 : 0.0;  // A gamepad
-            rightFrontPower = gamepad1.y ? 1.0 : 0.0;  // Y gamepad
-            rightBackPower  = gamepad1.b ? 1.0 : 0.0;  // B gamepad
-            */
+            if(gamepad1.dpad_down){
+                armAxelM.setPower(1);  // Axel Rotates UP
+            }
+            else if(gamepad1.dpad_up){
+                armAxelM.setPower(-1);  // Axel Rotates DOWN
+            }
+            else{
+                armAxelM.setPower(0.0);
+            }
 
-            // Send calculated power to wheels
-            leftFrontDrive.setPower(leftFrontPower / 1.5);
-            rightFrontDrive.setPower(rightFrontPower / 1.5);
-            leftBackDrive.setPower(leftBackPower / 1.5);
-            rightBackDrive.setPower(rightBackPower / 1.5);
+
+            if(gamepad1.x){
+                clawS.setPosition(0.6); // CLOSE Claw
+            }
+            else if (gamepad1.a){
+                clawS.setPosition(0.0);  // OPEN Claw
+            }
+
+            slide_pos = get_arm_pos();
+            axel_pos = get_axel_pos();
+
 
             // Show the elapsed game time and wheel power.
-            telemetry.addData("Status", "Run Time: " + runtime.toString());
-            telemetry.addData("Front left/Right", "%4.2f, %4.2f", leftFrontPower, rightFrontPower);
-            telemetry.addData("Back  left/Right", "%4.2f, %4.2f", leftBackPower, rightBackPower);
-            telemetry.addData("Yaw / Lateral / Axial", "%4.2f, %4.2f, %4.2f", yaw, lateral, axial);
+            //telemetry.addData("Status", "Run Time: " + runtime.toString());
+            //telemetry.addData("Front left/Right", "%4.2f, %4.2f", leftFrontPower, rightFrontPower);
+            //telemetry.addData("Back  left/Right", "%4.2f, %4.2f", leftBackPower, rightBackPower);
+            //telemetry.addData("Yaw / Lateral / Axial", "%4.2f, %4.2f, %4.2f", yaw, lateral, axial);
             telemetry.update();
         }
     }}

@@ -23,8 +23,11 @@ public class LeftAuto extends LinearOpMode {
     private DcMotor FR = null;
     private DcMotor BR = null;
 
-    private DcMotor armSlidesM = null;
-    Servo armAxelS;
+    private DcMotor leftArmSlidesM = null;
+    private DcMotor rightArmSlidesM = null;
+    private DcMotor armAxelM = null;
+
+    Servo clawS;
 
     private DcMotor leftEncoderMotor = null;
     private double leftEncoderPos = 0;
@@ -64,12 +67,14 @@ public class LeftAuto extends LinearOpMode {
         FR = hardwareMap.get(DcMotor.class, "right_front_drive");
         BR = hardwareMap.get(DcMotor.class, "right_back_drive");
 
-        armSlidesM = hardwareMap.get(DcMotor.class, "arm_slides");
-        armAxelS = hardwareMap.get(Servo.class, "arm_axel");
-
         leftEncoderMotor = hardwareMap.get(DcMotor.class, "left_front_drive");
         rightEncoderMotor = hardwareMap.get(DcMotor.class, "right_front_drive");
         centerEncoderMotor = hardwareMap.get(DcMotor.class, "left_back_drive");
+
+        leftArmSlidesM = hardwareMap.get(DcMotor.class, "left_arm_slides");
+        rightArmSlidesM = hardwareMap.get(DcMotor.class, "right_arm_slides");
+        armAxelM = hardwareMap.get(DcMotor.class, "arm_axel");
+        clawS = hardwareMap.get(Servo.class, "claw");
 
         imu = hardwareMap.get(IMU.class, "imu");
 
@@ -172,6 +177,7 @@ public class LeftAuto extends LinearOpMode {
          I also think we should put the camera on a servor so it faces the direction the robot is facing.
          */
 
+            /*
             curAngle = turnLeft(-0.3, 2, 90, orientation, curAngle);
             curAngle = turnRight(-0.3, 2, 180, orientation, curAngle);
             curAngle = turnLeft(-0.3, 2, 270, orientation, curAngle);
@@ -180,6 +186,23 @@ public class LeftAuto extends LinearOpMode {
             curAngle = turnRight(-0.3, 2, 45, orientation, curAngle);
 
             telemIMUOrientation(orientation, yaw);
+
+             */
+
+            localTargetTick = InchesToTicks(tileMatLength*0.5);
+            driveForward(localTargetTick, -0.4, 1);
+
+            ascendSlides(4800.0);
+            openClaw();
+            descendSlides(2400.0);
+
+            driveBackward(localTargetTick, -0.4, 1);
+
+            localTargetTick = InchesToTicks(tileMatLength*2.0);
+            strafeRight(localTargetTick, -0.4, 1);
+
+
+
 
         /* Meet 0 Code
         localTargetTick = InchesToTicks(tileMatLength*0.12);
@@ -233,7 +256,7 @@ public class LeftAuto extends LinearOpMode {
         stopAllPower();
         resetTicks();
 
-        sleep(1000*sleep);
+        sleep(500*sleep);
     }
 
     public void driveBackward(double targetTicks, double power, long sleep) {
@@ -261,7 +284,7 @@ public class LeftAuto extends LinearOpMode {
         stopAllPower();
         resetTicks();
 
-        sleep(1000*sleep);
+        sleep(500*sleep);
     }
 
     public void strafeRight(double targetTicks, double power, long sleep) {
@@ -281,7 +304,7 @@ public class LeftAuto extends LinearOpMode {
         resetTicks();
         setNormalDrive();
 
-        sleep(1000*sleep);
+        sleep(500*sleep);
     }
 
     public void strafeLeft(double targetTicks, double power, long sleep) {
@@ -301,12 +324,11 @@ public class LeftAuto extends LinearOpMode {
         resetTicks();
         setNormalDrive();
 
-        sleep(1000*sleep);
+        sleep(500*sleep);
     }
 
 
-    /* These turn functions where types without a complier so idk if its messed up
-     */
+    // Turns in one direction but doesn't turn back to back
     public double turnLeft(double power, long sleep, double angle, YawPitchRollAngles orientation, double curAngle){
         setRightPower(power);
         setLeftPower(-power);
@@ -325,7 +347,7 @@ public class LeftAuto extends LinearOpMode {
 
         telemIMUOrientation(orientation, yaw);
 
-        sleep(1000*sleep);
+        sleep(500*sleep);
 
         return ((curAngle+yaw)%360);
     }
@@ -348,9 +370,50 @@ public class LeftAuto extends LinearOpMode {
 
         telemIMUOrientation(orientation, yaw);
 
-        sleep(1000*sleep);
+        sleep(500*sleep);
 
         return((curAngle + yaw) % 360);
+    }
+
+    public void openClaw(){
+        clawS.setPosition(0.0);
+    }
+
+    public void closeClaw(){
+        clawS.setPosition(0.6);
+    }
+
+    public void ascendSlides(double target){
+        while (leftArmSlidesM.getCurrentPosition() < target) {
+            leftArmSlidesM.setPower(0.8);
+            rightArmSlidesM.setPower(-0.8);
+        }
+        stopSlides();
+    }
+
+    public void descendSlides(double target) {
+        while (leftArmSlidesM.getCurrentPosition() > target){
+            leftArmSlidesM.setPower(-0.8);
+            rightArmSlidesM.setPower(0.8);
+        }
+       stopSlides();
+    }
+
+    public void stopSlides(){
+        leftArmSlidesM.setPower(0.0);
+        rightArmSlidesM.setPower(0.0);
+    }
+
+    public void axelDown(){
+        armAxelM.setPower(-0.2);
+    }
+
+    public void axelUp(){
+        armAxelM.setPower(0.2);
+    }
+
+    public void stopAxel(){
+        armAxelM.setPower(0.0);
     }
 
 
