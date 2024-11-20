@@ -67,9 +67,9 @@ public class LeftAuto extends LinearOpMode {
         FR = hardwareMap.get(DcMotor.class, "right_front_drive");
         BR = hardwareMap.get(DcMotor.class, "right_back_drive");
 
-        leftEncoderMotor = hardwareMap.get(DcMotor.class, "left_front_drive");
-        rightEncoderMotor = hardwareMap.get(DcMotor.class, "right_front_drive");
-        centerEncoderMotor = hardwareMap.get(DcMotor.class, "left_back_drive");
+        centerEncoderMotor = hardwareMap.get(DcMotor.class, "left_front_drive");
+        leftEncoderMotor = hardwareMap.get(DcMotor.class, "right_back_drive");
+        rightEncoderMotor = hardwareMap.get(DcMotor.class, "left_back_drive");
 
         leftArmSlidesM = hardwareMap.get(DcMotor.class, "left_arm_slides");
         rightArmSlidesM = hardwareMap.get(DcMotor.class, "right_arm_slides");
@@ -178,6 +178,7 @@ public class LeftAuto extends LinearOpMode {
          */
 
             /*
+            //doesnt turn left and right back to back
             curAngle = turnLeft(-0.3, 2, 90, orientation, curAngle);
             curAngle = turnRight(-0.3, 2, 180, orientation, curAngle);
             curAngle = turnLeft(-0.3, 2, 270, orientation, curAngle);
@@ -189,19 +190,23 @@ public class LeftAuto extends LinearOpMode {
 
              */
 
-            localTargetTick = InchesToTicks(tileMatLength*0.5);
-            driveForward(localTargetTick, -0.4, 1);
 
-            ascendSlides(4800.0);
-            openClaw();
-            descendSlides(2400.0);
+        // MEET 2 CODE
+            localTargetTick = InchesToTicks(tileMatLength);
+            driveForward(localTargetTick, -0.4, 1);  // Drives up to rung
 
-            driveBackward(localTargetTick, -0.4, 1);
+            /*
+            ascend slide     |
+            claw             |  places starting specimen on rung
+            descend slide    |
 
-            localTargetTick = InchesToTicks(tileMatLength*2.0);
-            strafeRight(localTargetTick, -0.4, 1);
+            move axel down
+            look for color alliance sample or yellow
+            color alliance = obs zone
+            yellow = bucket
 
-
+            cycle until timer gets low and park
+             */
 
 
         /* Meet 0 Code
@@ -357,7 +362,7 @@ public class LeftAuto extends LinearOpMode {
         setRightPower(-power);
 
         double yaw = orientation.getYaw();
-        double targetAngle = curAngle + (-angle);
+        double targetAngle = curAngle - angle;
 
         while(rightYawConversion(yaw) <= targetAngle){
             orientation = imu.getRobotYawPitchRollAngles();
@@ -419,17 +424,17 @@ public class LeftAuto extends LinearOpMode {
 
 
     public void setNormalDrive(){
-        FR.setDirection(DcMotorSimple.Direction.REVERSE);
-        FL.setDirection(DcMotorSimple.Direction.FORWARD);
-        BR.setDirection(DcMotorSimple.Direction.REVERSE);
-        BL.setDirection(DcMotorSimple.Direction.FORWARD);
-    }
-
-    public void setStrafingDrive(){
         FR.setDirection(DcMotorSimple.Direction.FORWARD);
         FL.setDirection(DcMotorSimple.Direction.FORWARD);
         BR.setDirection(DcMotorSimple.Direction.REVERSE);
         BL.setDirection(DcMotorSimple.Direction.REVERSE);
+    }
+
+    public void setStrafingDrive(){
+        FR.setDirection(DcMotorSimple.Direction.FORWARD);
+        FL.setDirection(DcMotorSimple.Direction.REVERSE);
+        BR.setDirection(DcMotorSimple.Direction.REVERSE);
+        BL.setDirection(DcMotorSimple.Direction.FORWARD);
     }
 
 
@@ -515,7 +520,7 @@ public class LeftAuto extends LinearOpMode {
 
     public double rightYawConversion(double yaw){
         if (yaw <= -1){
-            return (yaw*-1);
+            return (Math.abs(yaw));
         }
         else{
             return (360 - yaw);
