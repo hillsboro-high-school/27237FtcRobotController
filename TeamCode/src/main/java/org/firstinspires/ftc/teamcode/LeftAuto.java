@@ -30,12 +30,12 @@ public class LeftAuto extends LinearOpMode {
     Servo clawS;
 
     private DcMotor leftEncoderMotor = null;
-    private double leftEncoderPos = 0;
-    private double deltaLeftEncoder = 0;
+    private double leftEncoderPos = 0.0;
+    private double deltaLeftEncoder = 0.0;
 
     private DcMotor rightEncoderMotor = null;
-    private double rightEncoderPos = 0;
-    private double deltaRightEncoder = 0;
+    private double rightEncoderPos = 0.0;
+    private double deltaRightEncoder = 0.0;
 
     private DcMotor centerEncoderMotor = null;
     private double centerEncoderPos = 0;
@@ -47,7 +47,7 @@ public class LeftAuto extends LinearOpMode {
     private double tileMatLength = 12*2;  // Inches
 
     double localTargetTick;
-
+    double slideTarget;
     // Calculates the circumference for the Odometry pods
     // Divides by 25.4 to change mm to inches
     double OPcircumference = 2.0*Math.PI*(16.0/25.4);
@@ -67,9 +67,9 @@ public class LeftAuto extends LinearOpMode {
         FR = hardwareMap.get(DcMotor.class, "right_front_drive");
         BR = hardwareMap.get(DcMotor.class, "right_back_drive");
 
-        centerEncoderMotor = hardwareMap.get(DcMotor.class, "left_front_drive");
+        centerEncoderMotor = hardwareMap.get(DcMotor.class, "right_front_drive");
         leftEncoderMotor = hardwareMap.get(DcMotor.class, "right_back_drive");
-        rightEncoderMotor = hardwareMap.get(DcMotor.class, "left_back_drive");
+        rightEncoderMotor = hardwareMap.get(DcMotor.class, "left_front_drive");
 
         leftArmSlidesM = hardwareMap.get(DcMotor.class, "left_arm_slides");
         rightArmSlidesM = hardwareMap.get(DcMotor.class, "right_arm_slides");
@@ -112,72 +112,8 @@ public class LeftAuto extends LinearOpMode {
 
         while (opModeIsActive()) {
 
-        /* Protoype Meet 1 Code
-
-        !!! ALL TARGET TICKS ARE ESTIMATED !!!
-        !!! NEED MORE HARDWARE BEFORE WE CAN TEST ANYTHING !!!
-        !*!*!*! THIS IS JUST PROTOTYPING CODE, WILL NEED MAJOR TWEAKING !*!*!*!
-
-        *** Variables needed ***
-        String sampleColor = color sensor reading on arm
-        String allianceColor = color sensor reading of alliance marker
-        String oppenentColor;
-
-        *** Chicken scratch code ***
-
-        if allianceColor == "blue"{
-        opponentColor = "red"
-        }
-        else{
-        openentColor = "blue"
-        }
-
-        localTargetTick = InchesToTicks(tileMatLength);
-        driveForward(localTargetTick, -0.5, 1);
-
-        ARM CODE:
-            -- Hang starting specimen
-            -- Grab another Sample from sub
-
-         if (sampleColor == "yellow"){
-            move to bucket
-            left = True (this will be for later)
-            localTargetTick = InchesToTicks(tileMatLength*1.5);
-            strafeLeft(localTargetTick, -0.4, 1);
-         }
-
-         else if(sampleColor == allianceColor){
-            move to obs
-            right = True (this will be for later)
-            localTargetTick = InchesToTicks(tileMatLength*2);
-            strafeRight(localTargetTick, -0.4, 1);
-         }
-
-         else if (sampleColor == oppenentColor){
-            EITHER:
-            -keep looking
-            OR:
-            -cycle left and right sides
-         }
-
-         if (left == True && camera doesnt detect alliance partner){
-            cycle all three yellow samples into baskets (perferably high)
-         }
-         else if (right == True && camera doesnt detect alliance partner){
-            cycle all three alliance colored samples into observation
-         }
-
-
-         Notes:
-         Encapsulate in while loop and check if time is about to run out so there is enough time to park
-         5-10 seconds should be when the park code executes
-
-         Do same thing for right ?? or get rid of right and only have one autonoumous.
-         Also integrate camera for positioning so we don't need exact starting locations
-         I also think we should put the camera on a servor so it faces the direction the robot is facing.
-         */
-
             /*
+            // Turn Testing
             //doesnt turn left and right back to back
             curAngle = turnLeft(-0.3, 2, 90, orientation, curAngle);
             curAngle = turnRight(-0.3, 2, 180, orientation, curAngle);
@@ -195,17 +131,46 @@ public class LeftAuto extends LinearOpMode {
             localTargetTick = InchesToTicks(tileMatLength);
             driveForward(localTargetTick, -0.4, 1);  // Drives up to rung
 
+            // place starting specimen
+            slideTarget = 4000;  // placeholder value
+            ascendSlides(slideTarget);
+            sleep(1000);
+            descendSlides(slideTarget);  // we want to descend the slides the same amount we ascend them
+            openClaw();
+
+            // repeat this n times or encase in while loop
+            axelDown(200);  // also placeholder value. We might need to calculate a circle arc as we dont have an angle...
+            // begin sample search algorithm
+            axelUp(200);
+
+            // go to observation zone
+            localTargetTick = InchesToTicks(tileMatLength*0.5);
+            driveBackward(localTargetTick, -0.4, 1);
+            localTargetTick = InchesToTicks(tileMatLength*2);
+            strafeRight(localTargetTick, -0.4, 1);
+            // turn 180
+            openClaw();
+
+            closeClaw();
+            // turn 180
+            strafeLeft(localTargetTick, -0.4, 1);
+            localTargetTick = InchesToTicks(tileMatLength*0.5);
+            driveForward(localTargetTick, -0.4, 1);
+
+            // encase in while loop
+
+
+
+
             /*
-            ascend slide     |
-            claw             |  places starting specimen on rung
-            descend slide    |
 
-            move axel down
-            look for color alliance sample or yellow
-            color alliance = obs zone
-            yellow = bucket
+            ** using n as i dont know how many we can cycle **
 
-            cycle until timer gets low and park
+            cycle 5 samples to obs zone
+            hang all 5 specimens on high rung
+
+            maybe check time every hang and park if time is low?
+            or continue cycling and not care
              */
 
 
@@ -409,12 +374,16 @@ public class LeftAuto extends LinearOpMode {
         rightArmSlidesM.setPower(0.0);
     }
 
-    public void axelDown(){
-        armAxelM.setPower(-0.2);
+    public void axelDown(double target){
+        while (armAxelM.getCurrentPosition() > target) {
+            armAxelM.setPower(-0.8);
+        }
     }
 
-    public void axelUp(){
-        armAxelM.setPower(0.2);
+    public void axelUp(double target){
+        while (armAxelM.getCurrentPosition() < target) {
+            armAxelM.setPower(0.8);
+        }
     }
 
     public void stopAxel(){
