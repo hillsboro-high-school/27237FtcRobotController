@@ -65,7 +65,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
  * Remove or comment out the @Disabled line to add this OpMode to the Driver Station OpMode list
  */
 
-@TeleOp(name="Basic: Omni Linear OpMode", group="Linear OpMode")
+@TeleOp(name="Basic: Drive Test", group="Linear OpMode")
 
 public class DriveTest extends LinearOpMode {
 
@@ -175,11 +175,11 @@ public class DriveTest extends LinearOpMode {
             rightBackDrive.setPower(rightBackPower/1.5);
 
 
-            if (gamepad1.right_trigger > 0 && axel_pos > 4000 && slide_pos < 2000) {
+            if (gamepad1.right_trigger > 0 && axel_pos > (4000*0.2698) && slide_pos < 2000) {   // 1079.2 for axel pos
                 leftArmSlidesM.setPower(0.8);  // Slides EXTEND
                 rightArmSlidesM.setPower(-0.8);
             }
-            else if(gamepad1.right_trigger > 0 && axel_pos < 0 && slide_pos <= 3000){
+            else if(gamepad1.right_trigger > 0 && axel_pos <= (4000*0.2698) && slide_pos <= 3000){   // 1079.2 for axel pos
                 leftArmSlidesM.setPower(0.8);  // Slides EXTEND
                 rightArmSlidesM.setPower(-0.8);
             }
@@ -188,20 +188,29 @@ public class DriveTest extends LinearOpMode {
                     leftArmSlidesM.setPower(-0.8); // Slides DESCEND
                     rightArmSlidesM.setPower(0.8);
             }
+            else if (axel_pos > (4000*0.2698) && slide_pos > 2200) { // Pulls out of illegal zone
+                leftArmSlidesM.setPower(-0.8); // Slides DESCEND
+                rightArmSlidesM.setPower(0.8);
+            }
             else {
                     leftArmSlidesM.setPower(0); // Slides DON'T MOVE
                     rightArmSlidesM.setPower(0);
             }
 
+
+
             telemetry.addData("Slide pos", slide_pos);
             telemetry.addData("Axel pos", axel_pos);
             telemetry.update();
 
-            if(gamepad1.dpad_down){
-                armAxelM.setPower(1);  // Axel Rotates UP
+            if(gamepad1.dpad_down && axel_pos < (4000*0.2698)) {
+                armAxelM.setPower(0.6);  // Axel Rotates UP
+            }
+            else if (gamepad1.dpad_down && axel_pos >= (4000*0.2698)) {
+                armAxelM.setPower(0.3);  // Axel Rotates UP, slowly near the ground
             }
             else if(gamepad1.dpad_up){
-                armAxelM.setPower(-1);  // Axel Rotates DOWN
+                armAxelM.setPower(-0.6);  // Axel Rotates DOWN
             }
             else{
                 armAxelM.setPower(0.0);
