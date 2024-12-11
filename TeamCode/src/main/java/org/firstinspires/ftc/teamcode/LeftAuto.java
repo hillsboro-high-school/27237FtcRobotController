@@ -1,15 +1,26 @@
 package org.firstinspires.ftc.teamcode;
 
+import android.app.Activity;
+import android.graphics.Color;
+import android.view.View;
+
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.DistanceSensor;
+import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
+import com.qualcomm.robotcore.hardware.NormalizedRGBA;
+import com.qualcomm.robotcore.hardware.SwitchableLight;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.hardware.IMU;
+
+import org.firstinspires.ftc.robotcontroller.external.samples.SensorColor;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AngularVelocity;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 
 @Autonomous(name="LeftAuto", group="Linear OpMode")
@@ -27,8 +38,8 @@ public class LeftAuto extends LinearOpMode {
     private DcMotor rightArmSlidesM = null;
     private DcMotor armAxelM = null;
 
+    NormalizedColorSensor teamColorSensor = null;
     Servo clawS;
-
     private DcMotor leftEncoderMotor = null;
     private double leftEncoderPos = 0.0;
     private double deltaLeftEncoder = 0.0;
@@ -57,6 +68,10 @@ public class LeftAuto extends LinearOpMode {
     double curAngle = 0;
     IMU imu;
 
+    // COLOR SENSOR SECTION GUYS!!!!!
+
+    View relativeLayout;
+
     @Override
     public void runOpMode() {
 
@@ -75,6 +90,7 @@ public class LeftAuto extends LinearOpMode {
         rightArmSlidesM = hardwareMap.get(DcMotor.class, "right_arm_slides");
         armAxelM = hardwareMap.get(DcMotor.class, "arm_axel");
         clawS = hardwareMap.get(Servo.class, "claw");
+        teamColorSensor = hardwareMap.get(NormalizedColorSensor.class, "sensor_color");
 
         imu = hardwareMap.get(IMU.class, "imu");
 
@@ -109,6 +125,28 @@ public class LeftAuto extends LinearOpMode {
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
         resetTicks();
+
+        // COLOR SENSOR SECTION GUYS!!!!!
+
+        // Get a reference to the RelativeLayout so we can later change the background
+        // color of the Robot Controller app to match the hue detected by the RGB sensor.
+        int relativeLayoutId = hardwareMap.appContext.getResources().getIdentifier("RelativeLayout", "id", hardwareMap.appContext.getPackageName());
+        relativeLayout = ((Activity) hardwareMap.appContext).findViewById(relativeLayoutId);
+
+        try {
+            runSample(); // actually execute the sample
+        } finally {
+            // On the way out, *guarantee* that the background is reasonable. It doesn't actually start off
+            // as pure white, but it's too much work to dig out what actually was used, and this is good
+            // enough to at least make the screen reasonable again.
+            // Set the panel back to the default color
+            relativeLayout.post(new Runnable() {
+                public void run() {
+                    relativeLayout.setBackgroundColor(Color.WHITE);
+                }
+            });
+        }
+
 
         while (opModeIsActive()) {
 
@@ -203,7 +241,6 @@ public class LeftAuto extends LinearOpMode {
     public void driveForward(double targetTicks, double power, long sleep) {
         resetTicks();
         setAllPower(power);
-
         telemAllTicks("Forward");
 
         while (!(rightStop && leftStop)) {
@@ -514,5 +551,79 @@ public class LeftAuto extends LinearOpMode {
         double rev = inches/OPcircumference;
         double tick = 2000*rev;
         return tick;
+    }
+
+
+    // MORE COLOR SENSOR LOGIC!!!!!
+
+    public void runSample() {
+        // Use a higher value of gain in dark situations, but lower in high. >= 1, lower values are safer
+        float gain = 2;
+
+        // Once per loop, we will update this hsvValues array. Element 0 is H, 1 is S, 2 is V.
+        final float[] hsvValues = new float[3];
+
+        /*
+        // xButtonPreviouslyPressed and xButtonCurrentlyPressed keep track of the previous and current
+        // state of the X button on the gamepad
+        boolean xButtonPreviouslyPressed = false;
+        boolean xButtonCurrentlyPressed = false;
+         */
+
+        // Map sensor. Normalized is used to ensure values between 0 and 1.
+        teamColorSensor = hardwareMap.get(NormalizedColorSensor.class, "sensor_color");
+
+        // If possible, turn the light on in the beginning (it might already be on anyway,
+        // we just make sure it is if we can).
+        if (teamColorSensor instanceof SwitchableLight) {
+            ((SwitchableLight) teamColorSensor).enableLight(true);
+        }
+
+        // Wait for the start button to be pressed.
+        waitForStart();
+
+        // Loop until we are asked to stop
+        while (opModeIsActive()) {
+            // Explain basic gain information via telemetry
+            // telemetry.addLine("Higher gain values mean that the sensor will report larger numbers for Red, Green, and Blue, and Value\n");
+            telemetry.addData("Gain: ", gain); // Show the gain value via telemetry
+
+            // Get the normalized colors from the sensor
+            NormalizedRGBA teamColor = teamColorSensor.getNormalizedColors();
+
+            /* Use telemetry to display feedback on the driver station. We show the red, green, and blue
+             * normalized values from the sensor (in the range of 0 to 1), as well as the equivalent
+             * HSV (hue, saturation and value) values. See http://web.archive.org/web/20190311170843/https://infohost.nmt.edu/tcc/help/pubs/colortheory/web/hsv.html
+             * for an explanation of HSV color. */
+
+            // Update the hsvValues array by passing it to Color.colorToHSV()
+            Color.colorToHSV(teamColor.toColor(), hsvValues);
+
+            telemetry.addLine()
+                    .addData("Red", "%.3f", teamColor.red)
+                    .addData("Green", "%.3f", teamColor.green)
+                    .addData("Blue", "%.3f", teamColor.blue);
+            telemetry.addLine()
+                    .addData("Hue", "%.3f", hsvValues[0])
+                    .addData("Saturation", "%.3f", hsvValues[1])
+                    .addData("Value", "%.3f", hsvValues[2]);
+            telemetry.addData("Alpha", "%.3f", teamColor.alpha);
+
+            /* If this color sensor also has a distance sensor, display the measured distance.
+             * Note that the reported distance is only useful at very close range, and is impacted by
+             * ambient light and surface reflectivity. */
+            if (teamColorSensor instanceof DistanceSensor) {
+                telemetry.addData("Distance (cm)", "%.3f", ((DistanceSensor) teamColorSensor).getDistance(DistanceUnit.CM));
+            }
+
+            telemetry.update();
+
+            // Change the Robot Controller's background color to match the color detected by the color sensor.
+            relativeLayout.post(new Runnable() {
+                public void run() {
+                    relativeLayout.setBackgroundColor(Color.HSVToColor(hsvValues));
+                }
+            });
+        }
     }
 }

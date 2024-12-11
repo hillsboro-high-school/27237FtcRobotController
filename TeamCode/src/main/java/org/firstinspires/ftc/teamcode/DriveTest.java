@@ -37,6 +37,8 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.robotcontroller.external.samples.SensorColor;
+
 /*
  * This file contains an example of a Linear "OpMode".
  * An OpMode is a 'program' that runs in either the autonomous or the teleop period of an FTC match.
@@ -78,6 +80,7 @@ public class DriveTest extends LinearOpMode {
     private DcMotor leftArmSlidesM = null;
     private DcMotor rightArmSlidesM = null;
     private DcMotor armAxelM = null;
+    SensorColor teamColorSensor = null;
     Servo clawS;
 
     private double slide_pos = 0;
@@ -109,6 +112,8 @@ public class DriveTest extends LinearOpMode {
         rightArmSlidesM = hardwareMap.get(DcMotor.class, "right_arm_slides");
 
         armAxelM = hardwareMap.get(DcMotor.class, "arm_axel");
+
+        teamColorSensor = hardwareMap.get(SensorColor.class, "sensor_color");
 
         clawS = hardwareMap.get(Servo.class, "claw");
 
