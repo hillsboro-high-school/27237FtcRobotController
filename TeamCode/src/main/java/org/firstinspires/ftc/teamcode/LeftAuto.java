@@ -38,7 +38,6 @@ public class LeftAuto extends LinearOpMode {
     private DcMotor rightArmSlidesM = null;
     private DcMotor armAxelM = null;
 
-    NormalizedColorSensor teamColorSensor = null;
     Servo clawS;
     private DcMotor leftEncoderMotor = null;
     private double leftEncoderPos = 0.0;
@@ -71,6 +70,9 @@ public class LeftAuto extends LinearOpMode {
     // COLOR SENSOR SECTION GUYS!!!!!
 
     View relativeLayout;
+    NormalizedColorSensor teamColorSensor = null;
+    NormalizedColorSensor sampleColorSensor = null;
+    String allianceColor;
 
     @Override
     public void runOpMode() {
@@ -86,11 +88,14 @@ public class LeftAuto extends LinearOpMode {
         leftEncoderMotor = hardwareMap.get(DcMotor.class, "right_back_drive");
         rightEncoderMotor = hardwareMap.get(DcMotor.class, "left_front_drive");
 
+        // M = Motor | S = servo
         leftArmSlidesM = hardwareMap.get(DcMotor.class, "left_arm_slides");
         rightArmSlidesM = hardwareMap.get(DcMotor.class, "right_arm_slides");
         armAxelM = hardwareMap.get(DcMotor.class, "arm_axel");
         clawS = hardwareMap.get(Servo.class, "claw");
-        teamColorSensor = hardwareMap.get(NormalizedColorSensor.class, "sensor_color");
+
+        teamColorSensor = hardwareMap.get(NormalizedColorSensor.class, "team_color_sensor");
+        sampleColorSensor = hardwareMap.get(NormalizedColorSensor.class, "sample_color_sensor");
 
         imu = hardwareMap.get(IMU.class, "imu");
 
@@ -122,14 +127,6 @@ public class LeftAuto extends LinearOpMode {
         // Send telemetry message to signify robot waiting;
         telemIMUOrientation(orientation, yaw);
 
-        // Wait for the game to start (driver presses PLAY)
-        waitForStart();
-        resetTicks();
-
-        // COLOR SENSOR SECTION GUYS!!!!!
-
-        // Get a reference to the RelativeLayout so we can later change the background
-        // color of the Robot Controller app to match the hue detected by the RGB sensor.
         int relativeLayoutId = hardwareMap.appContext.getResources().getIdentifier("RelativeLayout", "id", hardwareMap.appContext.getPackageName());
         relativeLayout = ((Activity) hardwareMap.appContext).findViewById(relativeLayoutId);
 
@@ -146,7 +143,52 @@ public class LeftAuto extends LinearOpMode {
                 }
             });
         }
+    }
 
+    protected void runSample() {
+        // You can give the sensor a gain value, will be multiplied by the sensor's raw value before the
+        // normalized color values are calculated. Color sensors (especially the REV Color Sensor V3)
+        // can give very low values (depending on the lighting conditions), which only use a small part
+        // of the 0-1 range that is available for the red, green, and blue values. In brighter conditions,
+        // you should use a smaller gain than in dark conditions. If your gain is too high, all of the
+        // colors will report at or near 1, and you won't be able to determine what color you are
+        // actually looking at. For this reason, it's better to err on the side of a lower gain
+        // (but always greater than  or equal to 1).
+        float gain = 2;
+
+        // Once per loop, we will update this hsvValues array. The first element (0) will contain the
+        // hue, the second element (1) will contain the saturation, and the third element (2) will
+        // contain the value. See http://web.archive.org/web/20190311170843/https://infohost.nmt.edu/tcc/help/pubs/colortheory/web/hsv.html
+        // for an explanation of HSV color.
+        final float[] hsvValues = new float[3];
+
+        // Team Alliance Color
+        if (teamColorSensor instanceof SwitchableLight) {
+            ((SwitchableLight)teamColorSensor).enableLight(true);
+        }
+        NormalizedRGBA teamColors = teamColorSensor.getNormalizedColors();
+
+        // Team Sample Color
+        if (sampleColorSensor instanceof SwitchableLight) {
+            ((SwitchableLight)sampleColorSensor).enableLight(true);
+        }
+
+        Color.colorToHSV(teamColors.toColor(), hsvValues);
+
+        if (teamColors.blue > teamColors.red){
+            allianceColor = "blue";
+        }
+        else{
+            allianceColor = "red";
+        }
+
+        telemetry.addData("Alliance Color", allianceColor);
+        telemetry.update();
+
+
+        // Wait for the game to start (driver presses PLAY)
+        waitForStart();
+        resetTicks();
 
         while (opModeIsActive()) {
 
@@ -177,8 +219,13 @@ public class LeftAuto extends LinearOpMode {
             openClaw();
 
             // repeat this n times or encase in while loop
-            axelDown(200);  // also placeholder value. We might need to calculate a circle arc as we dont have an angle...
-            // begin sample search algorithm
+            axelDown(200);  // also placeholder value. We might need to calculate a circle arc as we don't have an angle...
+
+            if (allianceColor == "blue"){
+                NormalizedRGBA sampleColors = sampleColorSensor.getNormalizedColors();
+            }
+
+
             axelUp(200);
 
             // go to observation zone
@@ -202,10 +249,10 @@ public class LeftAuto extends LinearOpMode {
 
             /*
 
-            ** using n as i dont know how many we can cycle **
+            ** using n as i don't know how many we can cycle **
 
-            cycle 5 samples to obs zone
-            hang all 5 specimens on high rung
+            cycle n samples to obs zone
+            hang all n specimens on high rung
 
             maybe check time every hang and park if time is low?
             or continue cycling and not care
@@ -547,83 +594,9 @@ public class LeftAuto extends LinearOpMode {
         double inches = OPcircumference * rev;
         return inches;
     }
-    public double InchesToTicks(double inches){
-        double rev = inches/OPcircumference;
-        double tick = 2000*rev;
+    public double InchesToTicks(double inches) {
+        double rev = inches / OPcircumference;
+        double tick = 2000 * rev;
         return tick;
-    }
-
-
-    // MORE COLOR SENSOR LOGIC!!!!!
-
-    public void runSample() {
-        // Use a higher value of gain in dark situations, but lower in high. >= 1, lower values are safer
-        float gain = 2;
-
-        // Once per loop, we will update this hsvValues array. Element 0 is H, 1 is S, 2 is V.
-        final float[] hsvValues = new float[3];
-
-        /*
-        // xButtonPreviouslyPressed and xButtonCurrentlyPressed keep track of the previous and current
-        // state of the X button on the gamepad
-        boolean xButtonPreviouslyPressed = false;
-        boolean xButtonCurrentlyPressed = false;
-         */
-
-        // Map sensor. Normalized is used to ensure values between 0 and 1.
-        teamColorSensor = hardwareMap.get(NormalizedColorSensor.class, "sensor_color");
-
-        // If possible, turn the light on in the beginning (it might already be on anyway,
-        // we just make sure it is if we can).
-        if (teamColorSensor instanceof SwitchableLight) {
-            ((SwitchableLight) teamColorSensor).enableLight(true);
-        }
-
-        // Wait for the start button to be pressed.
-        waitForStart();
-
-        // Loop until we are asked to stop
-        while (opModeIsActive()) {
-            // Explain basic gain information via telemetry
-            // telemetry.addLine("Higher gain values mean that the sensor will report larger numbers for Red, Green, and Blue, and Value\n");
-            telemetry.addData("Gain: ", gain); // Show the gain value via telemetry
-
-            // Get the normalized colors from the sensor
-            NormalizedRGBA teamColor = teamColorSensor.getNormalizedColors();
-
-            /* Use telemetry to display feedback on the driver station. We show the red, green, and blue
-             * normalized values from the sensor (in the range of 0 to 1), as well as the equivalent
-             * HSV (hue, saturation and value) values. See http://web.archive.org/web/20190311170843/https://infohost.nmt.edu/tcc/help/pubs/colortheory/web/hsv.html
-             * for an explanation of HSV color. */
-
-            // Update the hsvValues array by passing it to Color.colorToHSV()
-            Color.colorToHSV(teamColor.toColor(), hsvValues);
-
-            telemetry.addLine()
-                    .addData("Red", "%.3f", teamColor.red)
-                    .addData("Green", "%.3f", teamColor.green)
-                    .addData("Blue", "%.3f", teamColor.blue);
-            telemetry.addLine()
-                    .addData("Hue", "%.3f", hsvValues[0])
-                    .addData("Saturation", "%.3f", hsvValues[1])
-                    .addData("Value", "%.3f", hsvValues[2]);
-            telemetry.addData("Alpha", "%.3f", teamColor.alpha);
-
-            /* If this color sensor also has a distance sensor, display the measured distance.
-             * Note that the reported distance is only useful at very close range, and is impacted by
-             * ambient light and surface reflectivity. */
-            if (teamColorSensor instanceof DistanceSensor) {
-                telemetry.addData("Distance (cm)", "%.3f", ((DistanceSensor) teamColorSensor).getDistance(DistanceUnit.CM));
-            }
-
-            telemetry.update();
-
-            // Change the Robot Controller's background color to match the color detected by the color sensor.
-            relativeLayout.post(new Runnable() {
-                public void run() {
-                    relativeLayout.setBackgroundColor(Color.HSVToColor(hsvValues));
-                }
-            });
-        }
     }
 }
