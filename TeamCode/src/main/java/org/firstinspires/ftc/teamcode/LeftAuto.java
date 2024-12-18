@@ -65,6 +65,8 @@ public class LeftAuto extends LinearOpMode {
     double yaw;
 
     double curAngle = 0;
+
+    YawPitchRollAngles orientation;
     IMU imu;
 
     // COLOR SENSOR SECTION GUYS!!!!!
@@ -208,55 +210,27 @@ public class LeftAuto extends LinearOpMode {
 
 
         // MEET 2 CODE
-            localTargetTick = InchesToTicks(tileMatLength);
-            driveForward(localTargetTick, -0.4, 1);  // Drives up to rung
+            float starting_pos = leftEncoderMotor.getCurrentPosition();
+            closeClaw();
 
-            // place starting specimen
+            // place starting sample in basket
             slideTarget = 4000;  // placeholder value
             ascendSlides(slideTarget);
+            openClaw();
             sleep(1000);
-            descendSlides(slideTarget);  // we want to descend the slides the same amount we ascend them
-            openClaw();
 
-            // repeat this n times or encase in while loop
-            axelDown(200);  // also placeholder value. We might need to calculate a circle arc as we don't have an angle...
+            descendSlides(starting_pos);  // we want to descend the slides the same amount we ascend them
 
-            if (allianceColor == "blue"){
-                NormalizedRGBA sampleColors = sampleColorSensor.getNormalizedColors();
-            }
+            // Go to acent zone to park
+            localTargetTick = InchesToTicks(tileMatLength*2.3);
+            strafeRight(localTargetTick, -0.5, 1);
 
+            localTargetTick = InchesToTicks(tileMatLength*0.2);
+            driveBackward(localTargetTick, -0.5, 1);
 
-            axelUp(200);
+            axelUp(3000);  // placeholder value
+            stopAllPower();
 
-            // go to observation zone
-            localTargetTick = InchesToTicks(tileMatLength*0.5);
-            driveBackward(localTargetTick, -0.4, 1);
-            localTargetTick = InchesToTicks(tileMatLength*2);
-            strafeRight(localTargetTick, -0.4, 1);
-            // turn 180
-            openClaw();
-
-            closeClaw();
-            // turn 180
-            strafeLeft(localTargetTick, -0.4, 1);
-            localTargetTick = InchesToTicks(tileMatLength*0.5);
-            driveForward(localTargetTick, -0.4, 1);
-
-            // encase in while loop
-
-
-
-
-            /*
-
-            ** using n as i don't know how many we can cycle **
-
-            cycle n samples to obs zone
-            hang all n specimens on high rung
-
-            maybe check time every hang and park if time is low?
-            or continue cycling and not care
-             */
 
 
         /* Meet 0 Code
@@ -430,15 +404,15 @@ public class LeftAuto extends LinearOpMode {
     }
 
     public void openClaw(){
-        clawS.setPosition(0.0);
+        clawS.setPosition(1.0);
     }
 
     public void closeClaw(){
-        clawS.setPosition(0.6);
+        clawS.setPosition(0);
     }
 
     public void ascendSlides(double target){
-        while (leftArmSlidesM.getCurrentPosition() < target) {
+        while ((leftArmSlidesM.getCurrentPosition() + 200) <= target) {
             leftArmSlidesM.setPower(0.8);
             rightArmSlidesM.setPower(-0.8);
         }
@@ -446,7 +420,7 @@ public class LeftAuto extends LinearOpMode {
     }
 
     public void descendSlides(double target) {
-        while (leftArmSlidesM.getCurrentPosition() > target){
+        while ((leftArmSlidesM.getCurrentPosition() - 200) >= target){
             leftArmSlidesM.setPower(-0.8);
             rightArmSlidesM.setPower(0.8);
         }
@@ -458,16 +432,18 @@ public class LeftAuto extends LinearOpMode {
         rightArmSlidesM.setPower(0.0);
     }
 
-    public void axelDown(double target){
-        while (armAxelM.getCurrentPosition() > target) {
+    public void axelUp(double target){
+        while ((armAxelM.getCurrentPosition() - 100) > target) {
             armAxelM.setPower(-0.8);
         }
+        stopAxel();
     }
 
-    public void axelUp(double target){
-        while (armAxelM.getCurrentPosition() < target) {
+    public void axelDown(double target){
+        while ((armAxelM.getCurrentPosition() + 100) < target) {
             armAxelM.setPower(0.8);
         }
+        stopAxel();
     }
 
     public void stopAxel(){

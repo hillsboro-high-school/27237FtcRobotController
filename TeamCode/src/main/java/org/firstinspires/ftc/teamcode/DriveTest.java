@@ -35,6 +35,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.TouchSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcontroller.external.samples.SensorColor;
@@ -83,6 +84,8 @@ public class DriveTest extends LinearOpMode {
     SensorColor teamColorSensor = null;
     Servo clawS;
 
+    TouchSensor resetSlide;
+    TouchSensor resetAxel;
     private double slide_pos = 0;
 
     private double axel_pos = 0;
@@ -94,6 +97,8 @@ public class DriveTest extends LinearOpMode {
     private int get_axel_pos(){
             return armAxelM.getCurrentPosition();
     }
+
+    private int lastClawPos = 0;
 
     @Override
     public void runOpMode() {
@@ -112,10 +117,10 @@ public class DriveTest extends LinearOpMode {
         rightArmSlidesM = hardwareMap.get(DcMotor.class, "right_arm_slides");
 
         armAxelM = hardwareMap.get(DcMotor.class, "arm_axel");
-
-        teamColorSensor = hardwareMap.get(SensorColor.class, "sensor_color");
-
         clawS = hardwareMap.get(Servo.class, "claw");
+
+        resetSlide = hardwareMap.get(TouchSensor.class, "slide_touch");
+        resetAxel = hardwareMap.get(TouchSensor.class, "axel_touch");
 
         leftArmSlidesM.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         armAxelM.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -132,9 +137,16 @@ public class DriveTest extends LinearOpMode {
         // Keep testing until ALL the wheels move the robot forward when you push the left joystick forward.
 
         leftFrontDrive.setDirection(DcMotor.Direction.FORWARD); // 3
-        leftBackDrive.setDirection(DcMotor.Direction.REVERSE);  // 2
+        leftBackDrive.setDirection(DcMotor.Direction.FORWARD);  // 2
         rightFrontDrive.setDirection(DcMotor.Direction.REVERSE);  // 1
-        rightBackDrive.setDirection(DcMotor.Direction.FORWARD);  // 0
+        rightBackDrive.setDirection(DcMotor.Direction.REVERSE);  // 0
+
+        // Coasting Code
+        leftBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        leftBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        rightFrontDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        rightBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
         // Wait for the game to start (driver presses START)
         telemetry.addData("Status", "Initialized");
         telemetry.update();
@@ -143,11 +155,11 @@ public class DriveTest extends LinearOpMode {
         runtime.reset();
 
         // run until the end of the match (driver presses STOP)
-        while (opModeIsActive()) {
+        while (opModeIsActive() && !isStopRequested()) {
             double max;
 
             // POV Mode uses left joystick to go forward & strafe, and right joystick to rotate.
-            double axial   = -gamepad1.left_stick_y;
+            double axial = gamepad1.left_stick_y;
             double yaw =  gamepad1.left_stick_x;
             double lateral  = gamepad1.right_stick_x;
 
@@ -155,10 +167,10 @@ public class DriveTest extends LinearOpMode {
             // Set up a variable for each drive wheel to save the power level for telemetry.
 
             // Right Front and Right back have switched lateral signs because of wire swap
-            double leftFrontPower  = axial - lateral + yaw;
-            double rightFrontPower = axial + lateral - yaw;
-            double leftBackPower   = axial + lateral + yaw;
-            double rightBackPower  = axial - lateral - yaw;
+            double leftFrontPower  =   axial - lateral + yaw;
+            double rightFrontPower = - axial + lateral + yaw;
+            double leftBackPower   = - axial - lateral - yaw;
+            double rightBackPower  =   axial + lateral - yaw;
 
             // Normalize the values so no wheel power exceeds 100%
             // This ensures that the robot maintains the desired motion.
@@ -174,26 +186,35 @@ public class DriveTest extends LinearOpMode {
             }
 
             // Sends Calculated Power to Wheels
-            leftFrontDrive.setPower(leftFrontPower/1.5);
-            rightFrontDrive.setPower(rightFrontPower/1.5);
-            leftBackDrive.setPower(leftBackPower/1.5);
-            rightBackDrive.setPower(rightBackPower/1.5);
+            if (!isStopRequested()) {
+                leftFrontDrive.setPower(leftFrontPower / 1.5);
+                rightFrontDrive.setPower(rightFrontPower / 1.5);
+                leftBackDrive.setPower(leftBackPower / 1.5);
+                rightBackDrive.setPower(rightBackPower / 1.5);
+            }
+            else{
+                break;
+            }
 
 
-            if (gamepad1.right_trigger > 0 && axel_pos > (4000*0.2698) && slide_pos < 2000) {   // 1079.2 for axel pos
+                if (gamepad1.right_trigger > 0 && axel_pos > (2500*0.018) && slide_pos < 2250) {
+                // Manual Extension                            ^~250
                 leftArmSlidesM.setPower(0.8);  // Slides EXTEND
                 rightArmSlidesM.setPower(-0.8);
             }
-            else if(gamepad1.right_trigger > 0 && axel_pos <= (4000*0.2698) && slide_pos <= 3000){   // 1079.2 for axel pos
+            else if(gamepad1.right_trigger > 0 && axel_pos <= (2500*0.1018) && slide_pos <= 3500){
+                // Vertical Limiter                             ^~250
                 leftArmSlidesM.setPower(0.8);  // Slides EXTEND
                 rightArmSlidesM.setPower(-0.8);
             }
 
             else if (gamepad1.left_trigger > 0){
+                // Manual Takedown
                     leftArmSlidesM.setPower(-0.8); // Slides DESCEND
                     rightArmSlidesM.setPower(0.8);
-            }
-            else if (axel_pos > (4000*0.2698) && slide_pos > 2200) { // Pulls out of illegal zone
+            }                  // V~250
+            else if (axel_pos > (2500*0.1018) && slide_pos > 2350) { // Pulls out of illegal zone
+                // Horizontal LimiterPL
                 leftArmSlidesM.setPower(-0.8); // Slides DESCEND
                 rightArmSlidesM.setPower(0.8);
             }
@@ -208,26 +229,25 @@ public class DriveTest extends LinearOpMode {
             telemetry.addData("Axel pos", axel_pos);
             telemetry.update();
 
-            if(gamepad1.dpad_down && axel_pos < (4000*0.2698)) {
-                armAxelM.setPower(0.6);  // Axel Rotates UP
-            }
-            else if (gamepad1.dpad_down && axel_pos >= (4000*0.2698)) {
-                armAxelM.setPower(0.3);  // Axel Rotates UP, slowly near the ground
+            if(gamepad1.dpad_down) {
+                armAxelM.setPower(0.6);  // Axel Rotates FORWARD
             }
             else if(gamepad1.dpad_up){
-                armAxelM.setPower(-0.6);  // Axel Rotates DOWN
+                armAxelM.setPower(-1.0);  // Axel Rotates BACKWARD
             }
             else{
                 armAxelM.setPower(0.0);
             }
 
 
-            if(gamepad1.x){
-                clawS.setPosition(0.6); // CLOSE Claw
+            if(gamepad1.x && lastClawPos == 0){
+                lastClawPos = 1; // OPEN Claw
             }
-            else if (gamepad1.a){
-                clawS.setPosition(0.0);  // OPEN Claw
+            else if (gamepad1.a && lastClawPos == 1){
+                lastClawPos = 0;  // CLOSE Claw
             }
+
+            clawS.setPosition(lastClawPos);
 
             slide_pos = get_arm_pos();
             axel_pos = get_axel_pos();
@@ -240,4 +260,10 @@ public class DriveTest extends LinearOpMode {
             //telemetry.addData("Yaw / Lateral / Axial", "%4.2f, %4.2f, %4.2f", yaw, lateral, axial);
             telemetry.update();
         }
+
+        leftFrontDrive.setPower(0);
+        rightFrontDrive.setPower(0);
+        leftBackDrive.setPower(0);
+        rightBackDrive.setPower(0);
+
     }}
