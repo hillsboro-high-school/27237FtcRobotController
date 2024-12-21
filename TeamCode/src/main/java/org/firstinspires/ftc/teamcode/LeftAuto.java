@@ -125,10 +125,9 @@ public class LeftAuto extends LinearOpMode {
 
         resetTicks();
         setNormalDrive();  // Sets all motors to correct forward/reverse
-
-        // Send telemetry message to signify robot waiting;
         telemIMUOrientation(orientation, yaw);
 
+        // sets up color sensor
         int relativeLayoutId = hardwareMap.appContext.getResources().getIdentifier("RelativeLayout", "id", hardwareMap.appContext.getPackageName());
         relativeLayout = ((Activity) hardwareMap.appContext).findViewById(relativeLayoutId);
 
@@ -213,46 +212,29 @@ public class LeftAuto extends LinearOpMode {
             float starting_pos = leftEncoderMotor.getCurrentPosition();
             closeClaw();
 
+            localTargetTick = InchesToTicks(tileMatLength*0.5);
+            driveForward(localTargetTick, -0.4, 1);
+
             // place starting sample in basket
-            slideTarget = 4000;  // placeholder value
+            slideTarget = 3700;  // placeholder value
             ascendSlides(slideTarget);
-            openClaw();
             sleep(1000);
+            openClaw();
+            sleep(600);
+            driveBackward(localTargetTick, -0.4, 1);
 
             descendSlides(starting_pos);  // we want to descend the slides the same amount we ascend them
 
-            // Go to acent zone to park
+            // Go to ascent zone to park
             localTargetTick = InchesToTicks(tileMatLength*2.3);
             strafeRight(localTargetTick, -0.5, 1);
 
+            curAngle = turnLeft(-0.3, 2, 180, orientation, curAngle);
+
             localTargetTick = InchesToTicks(tileMatLength*0.2);
-            driveBackward(localTargetTick, -0.5, 1);
+            driveForward(localTargetTick, -0.4, 1);
 
-            axelUp(3000);  // placeholder value
-            stopAllPower();
-
-
-
-        /* Meet 0 Code
-        localTargetTick = InchesToTicks(tileMatLength*0.12);
-        strafeRight(localTargetTick, -0.4, 1);
-
-        localTargetTick = (InchesToTicks(tileMatLength*0.8));
-        driveForward(localTargetTick, -0.5, 1);
-
-        localTargetTick = (InchesToTicks(tileMatLength*0.8));
-        driveBackward(localTargetTick, -0.5, 1);
-
-        localTargetTick = InchesToTicks(tileMatLength*0.8);
-        strafeRight(localTargetTick, -0.4, 1);
-
-        localTargetTick = (InchesToTicks(tileMatLength*3.5));
-        driveBackward(localTargetTick, -0.5, 1);
-
-        localTargetTick = InchesToTicks(tileMatLength*0.6);
-        strafeLeft(localTargetTick, -0.4, 1);
-         */
-
+            axelDown(5000);
 
             telemAllTicks("None");
             break;
