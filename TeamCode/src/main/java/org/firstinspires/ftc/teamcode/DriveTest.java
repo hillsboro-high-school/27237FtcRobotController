@@ -89,13 +89,19 @@ public class DriveTest extends LinearOpMode {
     private double slide_pos = 0;
 
     private double axel_pos = 0;
+    private boolean axel_stop = false;
 
-    private int get_arm_pos(){
-            return leftArmSlidesM.getCurrentPosition();
+    public double getSlidePos(){
+        return (leftArmSlidesM.getCurrentPosition() - slide_pos);
     }
-
-    private int get_axel_pos(){
-            return armAxelM.getCurrentPosition();
+    public double getAxelPos(){
+            return (armAxelM.getCurrentPosition() - axel_pos);
+    }
+    public void resetSlidePos(){
+        slide_pos = leftArmSlidesM.getCurrentPosition();
+    }
+    public void resetAxelPos(){
+        axel_pos = armAxelM.getCurrentPosition();
     }
 
     private int lastClawPos = 0;
@@ -197,12 +203,12 @@ public class DriveTest extends LinearOpMode {
             }
 
 
-                if (gamepad1.right_trigger > 0 && axel_pos > (2500*0.018) && slide_pos < 2250) {
+                if (gamepad1.right_trigger > 0 && getAxelPos() > (2500*0.018) && getSlidePos() < 2250) {
                 // Manual Extension                            ^~250
                 leftArmSlidesM.setPower(0.8);  // Slides EXTEND
                 rightArmSlidesM.setPower(-0.8);
             }
-            else if(gamepad1.right_trigger > 0 && axel_pos <= (2500*0.1018) && slide_pos <= 3500){
+            else if(gamepad1.right_trigger > 0 && getAxelPos() <= (2500*0.1018) && getSlidePos() <= 3900){
                 // Vertical Limiter                             ^~250
                 leftArmSlidesM.setPower(0.8);  // Slides EXTEND
                 rightArmSlidesM.setPower(-0.8);
@@ -213,7 +219,7 @@ public class DriveTest extends LinearOpMode {
                     leftArmSlidesM.setPower(-0.8); // Slides DESCEND
                     rightArmSlidesM.setPower(0.8);
             }                  // V~250
-            else if (axel_pos > (2500*0.1018) && slide_pos > 2350) { // Pulls out of illegal zone
+            else if (getAxelPos() > (2500*0.1018) && getSlidePos() > 2350) { // Pulls out of illegal zone
                 // Horizontal LimiterPL
                 leftArmSlidesM.setPower(-0.8); // Slides DESCEND
                 rightArmSlidesM.setPower(0.8);
@@ -225,19 +231,13 @@ public class DriveTest extends LinearOpMode {
 
 
 
-            telemetry.addData("Slide pos", slide_pos);
-            telemetry.addData("Axel pos", axel_pos);
+            telemetry.addData("Slide pos", getSlidePos());
+            telemetry.addData("Axel pos", getAxelPos());
             telemetry.update();
 
-            if(gamepad1.dpad_down) {
-                armAxelM.setPower(0.6);  // Axel Rotates FORWARD
-            }
-            else if(gamepad1.dpad_up){
-                armAxelM.setPower(-1.0);  // Axel Rotates BACKWARD
-            }
-            else{
-                armAxelM.setPower(0.0);
-            }
+            if(gamepad1.dpad_down) {armAxelM.setPower(0.6);}  // Axel Rotates FORWARD
+            else if(gamepad1.dpad_up && !axel_stop) {armAxelM.setPower(-1.0);}  // Axel Rotates BACKWARD
+            else {armAxelM.setPower(0.0);}
 
 
             if(gamepad1.x && lastClawPos == 0){
@@ -249,8 +249,9 @@ public class DriveTest extends LinearOpMode {
 
             clawS.setPosition(lastClawPos);
 
-            slide_pos = get_arm_pos();
-            axel_pos = get_axel_pos();
+            if(!(resetSlide.isPressed())){resetSlidePos();}
+            if(!(resetAxel.isPressed())){resetAxelPos(); axel_stop = true;}
+            else{axel_stop = false;}
 
 
             // Show the elapsed game time and wheel power.

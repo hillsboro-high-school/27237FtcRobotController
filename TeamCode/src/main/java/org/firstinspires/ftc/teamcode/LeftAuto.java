@@ -166,22 +166,20 @@ public class LeftAuto extends LinearOpMode {
              */
 
 
-            // MEET 2 CODE
-            float starting_pos = leftEncoderMotor.getCurrentPosition();
+            // MEET 3 CODE
             closeClaw();
 
-            localTargetTick = InchesToTicks(tileMatLength*0.5);
+            localTargetTick = InchesToTicks(tileMatLength*0.42);
             driveForward(localTargetTick, -0.4, 1);
 
             // place starting sample in basket
-            slideTarget = 3700;  // placeholder value
+            slideTarget = 3900;  // placeholder value
             ascendSlides(slideTarget);
-            sleep(1000);
             openClaw();
-            sleep(600);
+            sleep(500);
             driveBackward(localTargetTick, -0.4, 1);
 
-            descendSlides(starting_pos);  // we want to descend the slides the same amount we ascend them
+            descendSlides(slideTarget/2);
 
             // Go to ascent zone to park
             localTargetTick = InchesToTicks(tileMatLength*2.3);
