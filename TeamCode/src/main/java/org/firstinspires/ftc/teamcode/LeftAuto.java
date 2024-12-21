@@ -210,7 +210,7 @@ public class LeftAuto extends LinearOpMode {
         if (sampleColorSensor instanceof SwitchableLight) {
             ((SwitchableLight) sampleColorSensor).enableLight(true);
         }
-
+        sleep(100);
         Color.colorToHSV(teamColors.toColor(), hsvValues);
 
         if (teamColors.blue > teamColors.red) {
@@ -417,17 +417,17 @@ public class LeftAuto extends LinearOpMode {
 
 
     public void setNormalDrive(){
-        FR.setDirection(DcMotorSimple.Direction.FORWARD);
+        FR.setDirection(DcMotorSimple.Direction.REVERSE);
         FL.setDirection(DcMotorSimple.Direction.FORWARD);
         BR.setDirection(DcMotorSimple.Direction.REVERSE);
-        BL.setDirection(DcMotorSimple.Direction.REVERSE);
+        BL.setDirection(DcMotorSimple.Direction.FORWARD);
     }
 
     public void setStrafingDrive(){
-        FR.setDirection(DcMotorSimple.Direction.FORWARD);
-        FL.setDirection(DcMotorSimple.Direction.REVERSE);
-        BR.setDirection(DcMotorSimple.Direction.REVERSE);
-        BL.setDirection(DcMotorSimple.Direction.FORWARD);
+        FR.setDirection(DcMotorSimple.Direction.REVERSE);
+        FL.setDirection(DcMotorSimple.Direction.FORWARD);
+        BR.setDirection(DcMotorSimple.Direction.FORWARD);
+        BL.setDirection(DcMotorSimple.Direction.REVERSE);
     }
 
 
