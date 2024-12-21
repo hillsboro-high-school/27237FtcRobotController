@@ -144,48 +144,6 @@ public class LeftAuto extends LinearOpMode {
                 }
             });
         }
-    }
-
-    protected void runSample() {
-        // You can give the sensor a gain value, will be multiplied by the sensor's raw value before the
-        // normalized color values are calculated. Color sensors (especially the REV Color Sensor V3)
-        // can give very low values (depending on the lighting conditions), which only use a small part
-        // of the 0-1 range that is available for the red, green, and blue values. In brighter conditions,
-        // you should use a smaller gain than in dark conditions. If your gain is too high, all of the
-        // colors will report at or near 1, and you won't be able to determine what color you are
-        // actually looking at. For this reason, it's better to err on the side of a lower gain
-        // (but always greater than  or equal to 1).
-        float gain = 2;
-
-        // Once per loop, we will update this hsvValues array. The first element (0) will contain the
-        // hue, the second element (1) will contain the saturation, and the third element (2) will
-        // contain the value. See http://web.archive.org/web/20190311170843/https://infohost.nmt.edu/tcc/help/pubs/colortheory/web/hsv.html
-        // for an explanation of HSV color.
-        final float[] hsvValues = new float[3];
-
-        // Team Alliance Color
-        if (teamColorSensor instanceof SwitchableLight) {
-            ((SwitchableLight)teamColorSensor).enableLight(true);
-        }
-        NormalizedRGBA teamColors = teamColorSensor.getNormalizedColors();
-
-        // Team Sample Color
-        if (sampleColorSensor instanceof SwitchableLight) {
-            ((SwitchableLight)sampleColorSensor).enableLight(true);
-        }
-
-        Color.colorToHSV(teamColors.toColor(), hsvValues);
-
-        if (teamColors.blue > teamColors.red){
-            allianceColor = "blue";
-        }
-        else{
-            allianceColor = "red";
-        }
-
-        telemetry.addData("Alliance Color", allianceColor);
-        telemetry.update();
-
 
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
@@ -208,7 +166,7 @@ public class LeftAuto extends LinearOpMode {
              */
 
 
-        // MEET 2 CODE
+            // MEET 2 CODE
             float starting_pos = leftEncoderMotor.getCurrentPosition();
             closeClaw();
 
@@ -239,6 +197,32 @@ public class LeftAuto extends LinearOpMode {
             telemAllTicks("None");
             break;
         }
+    }
+
+    protected void runSample() {
+        final float[] hsvValues = new float[3];
+
+        // Team Alliance Color
+        if (teamColorSensor instanceof SwitchableLight) {
+            ((SwitchableLight) teamColorSensor).enableLight(true);
+        }
+        NormalizedRGBA teamColors = teamColorSensor.getNormalizedColors();
+
+        // Team Sample Color
+        if (sampleColorSensor instanceof SwitchableLight) {
+            ((SwitchableLight) sampleColorSensor).enableLight(true);
+        }
+
+        Color.colorToHSV(teamColors.toColor(), hsvValues);
+
+        if (teamColors.blue > teamColors.red) {
+            allianceColor = "blue";
+        } else {
+            allianceColor = "red";
+        }
+
+        telemetry.addData("Alliance Color", allianceColor);
+        telemetry.update();
     }
 
     public void driveForward(double targetTicks, double power, long sleep) {
