@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode;
 
 import android.app.Activity;
 import android.graphics.Color;
+import android.view.GestureDetector;
 import android.view.View;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
@@ -16,12 +17,15 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.hardware.IMU;
+import com.qualcomm.robotcore.hardware.ColorSensor;
 
 import org.firstinspires.ftc.robotcontroller.external.samples.SensorColor;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AngularVelocity;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
+
+import java.util.Objects;
 
 @Autonomous(name="LeftAuto", group="Linear OpMode")
 
@@ -64,17 +68,33 @@ public class LeftAuto extends LinearOpMode {
 
     double yaw;
 
-    double curAngle = 0;
+    double curAngle;
 
     YawPitchRollAngles orientation;
     IMU imu;
 
     // COLOR SENSOR SECTION GUYS!!!!!
 
-    View relativeLayout;
-    NormalizedColorSensor teamColorSensor = null;
-    NormalizedColorSensor sampleColorSensor = null;
+    ColorSensor teamColorSensor = null;
+    ColorSensor sampleColorSensor = null;
+
     String allianceColor;
+
+    double redR = 189.0;
+    double redG = 119.5;
+    double redB = 67;
+
+    double blueR = 54.5;
+    double blueG = 94.5;
+    double blueB = 130.5;
+
+    double yellowR = 239.5;
+    double yellowG = 305.5;
+    double yellowB = 92.7;
+
+    double tileR;
+    double tileG;
+    double tileB;
 
     @Override
     public void runOpMode() {
@@ -96,8 +116,8 @@ public class LeftAuto extends LinearOpMode {
         armAxelM = hardwareMap.get(DcMotor.class, "arm_axel");
         clawS = hardwareMap.get(Servo.class, "claw");
 
-        teamColorSensor = hardwareMap.get(NormalizedColorSensor.class, "team_color_sensor");
-        sampleColorSensor = hardwareMap.get(NormalizedColorSensor.class, "sample_color_sensor");
+        teamColorSensor = hardwareMap.get(ColorSensor.class, "team_color_sensor");
+        sampleColorSensor = hardwareMap.get(ColorSensor.class, "sample_color_sensor");
 
         imu = hardwareMap.get(IMU.class, "imu");
 
@@ -122,28 +142,18 @@ public class LeftAuto extends LinearOpMode {
 
         YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
         yaw = orientation.getYaw();
+        curAngle = yaw;
 
         resetTicks();
         setNormalDrive();  // Sets all motors to correct forward/reverse
         telemIMUOrientation(orientation, yaw);
 
-        // sets up color sensor
-        int relativeLayoutId = hardwareMap.appContext.getResources().getIdentifier("RelativeLayout", "id", hardwareMap.appContext.getPackageName());
-        relativeLayout = ((Activity) hardwareMap.appContext).findViewById(relativeLayoutId);
+        teamColor();
 
-        try {
-            runSample(); // actually execute the sample
-        } finally {
-            // On the way out, *guarantee* that the background is reasonable. It doesn't actually start off
-            // as pure white, but it's too much work to dig out what actually was used, and this is good
-            // enough to at least make the screen reasonable again.
-            // Set the panel back to the default color
-            relativeLayout.post(new Runnable() {
-                public void run() {
-                    relativeLayout.setBackgroundColor(Color.WHITE);
-                }
-            });
-        }
+        telemetry.addData("CurAngle", curAngle);
+        telemetry.addData("Status", "Initialized");
+        telemetry.addData("Team", allianceColor);
+        telemetry.update();
 
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
@@ -151,76 +161,186 @@ public class LeftAuto extends LinearOpMode {
 
         while (opModeIsActive()) {
 
-            /*
+
             // Turn Testing
             //doesnt turn left and right back to back
-            curAngle = turnLeft(-0.3, 2, 90, orientation, curAngle);
-            curAngle = turnRight(-0.3, 2, 180, orientation, curAngle);
-            curAngle = turnLeft(-0.3, 2, 270, orientation, curAngle);
-            curAngle = turnRight(-0.3, 2, 359, orientation,curAngle);
-            curAngle = turnLeft(-0.3, 2, 180, orientation, curAngle);  // 360 and 0 degrees don't work with IMU
-            curAngle = turnRight(-0.3, 2, 45, orientation, curAngle);
+            //curAngle = turnLeft(-0.3, 6, 90, orientation, curAngle);
+            curAngle = turnRight(-0.3, 10, 90, orientation, curAngle);
+            curAngle = turnLeft(-0.3, 10, 270, orientation, curAngle);
+            curAngle = turnRight(-0.3, 10, 359, orientation,curAngle);
+            curAngle = turnLeft(-0.3, 10, 180, orientation, curAngle);  // 360 and 0 degrees don't work with IMU
+            curAngle = turnRight(-0.3, 10, 45, orientation, curAngle);
 
             telemIMUOrientation(orientation, yaw);
+
+
+
+            /*
+            // MEET 3 CODE
+            closeClaw();
+
+            // place starting sample in basket
+            int startingSlidePos = leftArmSlidesM.getCurrentPosition();
+            slideTarget = 3500;  // placeholder value
+            ascendSlides(slideTarget);
+            openClaw();
+            sleep(500);
+            descendSlides(startingSlidePos);
+
+            axelDown(900);
+
+            telemetry.addData("Axel", armAxelM.getCurrentPosition());
+            telemetry.update();
+
+            getTileColors();
+
+            localTargetTick = InchesToTicks(tileMatLength*0.5);
+            strafeRight(localTargetTick, -0.4, 1);
+            curAngle = turnLeft(-0.4, 1, 270, orientation, curAngle);
+
+            localTargetTick = InchesToTicks(tileMatLength);
+            while(true){
+                strafeLeft(localTargetTick, -0.4, 1);
+                if (!(Objects.equals(sampleColors(), "empty"))){
+                    break;
+                }
+                else{
+                    localTargetTick = localTargetTick/2;
+                }
+
+                strafeRight(localTargetTick, -0.4, 1);
+                if (!(Objects.equals(sampleColors(), "empty"))){
+                    break;
+                }
+                else{
+                    localTargetTick = localTargetTick/2;
+                }
+            }
+            curAngle = turnLeft(-0.4, 1, 90, orientation, curAngle);
+            localTargetTick = InchesToTicks(tileMatLength*0.5);
+            strafeLeft(localTargetTick, -0.4, 1);
 
              */
 
 
-            // MEET 3 CODE
-            closeClaw();
-
-            localTargetTick = InchesToTicks(tileMatLength*0.42);
-            driveForward(localTargetTick, -0.4, 1);
-
-            // place starting sample in basket
-            slideTarget = 3900;  // placeholder value
-            ascendSlides(slideTarget);
-            openClaw();
-            sleep(500);
-            driveBackward(localTargetTick, -0.4, 1);
-
-            descendSlides(slideTarget/2);
-
-            // Go to ascent zone to park
-            localTargetTick = InchesToTicks(tileMatLength*2.3);
-            strafeRight(localTargetTick, -0.5, 1);
-
-            curAngle = turnLeft(-0.3, 2, 180, orientation, curAngle);
-
-            localTargetTick = InchesToTicks(tileMatLength*0.2);
-            driveForward(localTargetTick, -0.4, 1);
-
-            axelDown(5000);
-
-            telemAllTicks("None");
-            break;
         }
     }
 
-    protected void runSample() {
-        final float[] hsvValues = new float[3];
+    public void teamColor() {
+        int inputRed = teamColorSensor.red();
+        int inputGreen = teamColorSensor.green();
+        int inputBlue = teamColorSensor.blue();
 
-        // Team Alliance Color
-        if (teamColorSensor instanceof SwitchableLight) {
-            ((SwitchableLight) teamColorSensor).enableLight(true);
-        }
-        NormalizedRGBA teamColors = teamColorSensor.getNormalizedColors();
+        double RI;
+        double BI;
 
-        // Team Sample Color
-        if (sampleColorSensor instanceof SwitchableLight) {
-            ((SwitchableLight) sampleColorSensor).enableLight(true);
-        }
-        sleep(100);
-        Color.colorToHSV(teamColors.toColor(), hsvValues);
+        double Cb;
+        double Cr;
 
-        if (teamColors.blue > teamColors.red) {
-            allianceColor = "blue";
-        } else {
+        RI = Math.sqrt( Math.pow((inputRed-1398), 2) + Math.pow((inputGreen-831), 2) + Math.pow((inputBlue-482), 2) );
+        BI = Math.sqrt( Math.pow((inputRed-285), 2) + Math.pow((inputGreen-650), 2) + Math.pow((inputBlue-1333), 2) );
+
+        Cr = 1 - (RI/(RI+BI));
+        Cb = 1 - (BI/(BI+RI));
+
+        if(Cr > Cb){
             allianceColor = "red";
         }
+        else{
+            allianceColor = "blue";
+        }
 
-        telemetry.addData("Alliance Color", allianceColor);
+
+
+    }
+
+    public String sampleColors(){
+        int inputRed = sampleColorSensor.red();
+        int inputGreen = sampleColorSensor.green();
+        int inputBlue = sampleColorSensor.blue();
+
+        // Red/Blue/Yellow/Empty Input
+        double RI;
+        double BI;
+        double YI;
+        double EI;
+
+        // Cry: C = confidence. Red to Yellow Ratio
+        // R = red, Y = Yellow, G = Green, E = empty (when the claw has nothing)
+        double Cry;
+        double Crb;
+        double Cre;
+
+        double Cbr;
+        double Cby;
+        double Cbe;
+
+        double Cye;
+        double Cyr;
+        double Cyb;
+
+        double Cer;
+        double Ceb;
+        double Cey;
+
+        // Final Confidence
+        double Cr;
+        double Cb;
+        double Cy;
+        double Ce;
+
+        String finalColor;
+
+        RI = Math.sqrt( Math.pow((inputRed-redR), 2) + Math.pow((inputGreen-redG), 2) + Math.pow((inputBlue-redB), 2) );
+        BI = Math.sqrt( Math.pow((inputRed-blueR), 2) + Math.pow((inputGreen-blueG), 2) + Math.pow((inputBlue-blueB), 2) );
+        YI = Math.sqrt( Math.pow((inputRed-yellowR), 2) + Math.pow((inputGreen-yellowG), 2) + Math.pow((inputBlue-yellowB), 2) );
+        EI = Math.sqrt( Math.pow((inputRed-tileR), 2) + Math.pow((inputGreen-tileG), 2) + Math.pow((inputBlue-tileB), 2) );
+
+        Cry = 1 - (RI/(RI+YI));
+        Crb = 1 - (RI/(RI+BI));
+        Cre = 1 - (RI/(RI+EI));
+
+        Cbr = 1 - (BI/(BI+RI));
+        Cby = 1 - (BI/(BI+YI));
+        Cbe = 1 - (BI/(BI+EI));
+
+        Cye = 1 - (YI/(YI+EI));
+        Cyr = 1 - (YI/(YI+RI));
+        Cyb = 1 - (YI/(YI+BI));
+
+        Cey = 1 - (EI/(EI+YI));
+        Cer = 1 - (EI/(EI+RI));
+        Ceb = 1 - (EI/(EI+BI));
+
+        Cr = (Crb+Cry+Cre)/3;
+        Cb = (Cbr+Cby+Cbe)/3;
+        Cy = (Cyb+Cyr+Cye)/3;
+        Ce = (Cer+Ceb+Cey)/3;
+
+        telemetry.addData("Confidence Red", Cr);
+        telemetry.addData("Confidence Blue", Cb);
+        telemetry.addData("Confidence Yellow", Cy);
+        telemetry.addData("Confidence Empty", Ce);
         telemetry.update();
+
+        if(Cr > Cb && Cr > Cy && Cr > Ce){
+            return "red";
+        }
+        else if(Cb > Cy && Cb > Ce){
+            return "blue";
+        }
+        else if(Cy > Ce){
+            return "yellow";
+        }
+        else{
+            return "empty";
+        }
+    }
+
+    public void getTileColors(){
+        tileR = sampleColorSensor.red();
+        tileG = sampleColorSensor.green();
+        tileB = sampleColorSensor.blue();
     }
 
     public void driveForward(double targetTicks, double power, long sleep) {
@@ -286,7 +406,7 @@ public class LeftAuto extends LinearOpMode {
 
         telemAllTicks("Right");
 
-        while (getCenterTicks() < targetTicks){
+        while (getCenterTicks() > -targetTicks){
             telemAllTicks("Right");
         }
 
@@ -319,50 +439,65 @@ public class LeftAuto extends LinearOpMode {
         sleep(500*sleep);
     }
 
-
     // Turns in one direction but doesn't turn back to back
     public double turnLeft(double power, long sleep, double angle, YawPitchRollAngles orientation, double curAngle){
+        double yaw = orientation.getYaw();
+        double targetAngle = ((curAngle + angle) % 360);
+
+        telemetry.addData("Target", targetAngle);
+        telemetry.addData("leftYaw C", leftYawConversion(yaw));
+        telemetry.addData("Yaw", yaw);
+        telemetry.update();
+
         setRightPower(power);
         setLeftPower(-power);
-
-        double yaw = orientation.getYaw();
-        double targetAngle = curAngle + angle;
 
         while(leftYawConversion(yaw) <= targetAngle){
             orientation = imu.getRobotYawPitchRollAngles();
             yaw = orientation.getYaw();
-            telemIMUOrientation(orientation, yaw);
+            telemetry.addData("Target", targetAngle);
+            telemetry.addData("leftYaw C", leftYawConversion(yaw));
+            telemetry.update();
+            //telemIMUOrientation(orientation, yaw);
         }
 
         stopAllPower();
         resetTicks();
 
-        telemIMUOrientation(orientation, yaw);
+        //telemIMUOrientation(orientation, yaw);
 
-        sleep(500*sleep);
+        sleep(1000*sleep);
 
-        return ((curAngle+yaw)%360);
+        return ((curAngle + yaw) % 360);
     }
 
     public double turnRight(double power, long sleep, double angle, YawPitchRollAngles orientation, double curAngle){
+        double yaw = orientation.getYaw();
+        double targetAngle = curAngle - angle;
+
         setLeftPower(power);
         setRightPower(-power);
 
-        double yaw = orientation.getYaw();
-        double targetAngle = curAngle - angle;
+        telemetry.addData("Target", targetAngle);
+        telemetry.addData("rightYaw C", rightYawConversion(yaw));
+        telemetry.addData("Yaw", yaw);
+        telemetry.update();
 
         while(rightYawConversion(yaw) <= targetAngle){
             orientation = imu.getRobotYawPitchRollAngles();
             yaw = orientation.getYaw();
-            telemIMUOrientation(orientation, yaw);
+            telemetry.addData("Target", targetAngle);
+            telemetry.addData("rightYaw C", rightYawConversion(yaw));
+            telemetry.update();
+            //telemIMUOrientation(orientation, yaw);
         }
 
         stopAllPower();
         resetTicks();
 
-        telemIMUOrientation(orientation, yaw);
+        //telemIMUOrientation(orientation, yaw);
 
-        sleep(500*sleep);
+        sleep(1000*sleep);
 
         return((curAngle + yaw) % 360);
     }
@@ -376,7 +511,7 @@ public class LeftAuto extends LinearOpMode {
     }
 
     public void ascendSlides(double target){
-        while ((leftArmSlidesM.getCurrentPosition() + 200) <= target) {
+        while ((leftArmSlidesM.getCurrentPosition() + 100) <= target) {
             leftArmSlidesM.setPower(0.8);
             rightArmSlidesM.setPower(-0.8);
         }
@@ -384,7 +519,7 @@ public class LeftAuto extends LinearOpMode {
     }
 
     public void descendSlides(double target) {
-        while ((leftArmSlidesM.getCurrentPosition() - 200) >= target){
+        while ((leftArmSlidesM.getCurrentPosition() - 100) >= target){
             leftArmSlidesM.setPower(-0.8);
             rightArmSlidesM.setPower(0.8);
         }
@@ -397,14 +532,14 @@ public class LeftAuto extends LinearOpMode {
     }
 
     public void axelUp(double target){
-        while ((armAxelM.getCurrentPosition() - 100) > target) {
+        while ((armAxelM.getCurrentPosition() - 80) > target) {
             armAxelM.setPower(-0.8);
         }
         stopAxel();
     }
 
     public void axelDown(double target){
-        while ((armAxelM.getCurrentPosition() + 100) < target) {
+        while ((armAxelM.getCurrentPosition() + 80) < target) {
             armAxelM.setPower(0.8);
         }
         stopAxel();
@@ -512,7 +647,7 @@ public class LeftAuto extends LinearOpMode {
     }
 
     public double rightYawConversion(double yaw){
-        if (yaw <= -1){
+        if (yaw < 0){
             return (Math.abs(yaw));
         }
         else{
@@ -521,7 +656,7 @@ public class LeftAuto extends LinearOpMode {
     }
 
     public double leftYawConversion(double yaw){
-        if (yaw <= -1){
+        if (yaw < 0){
             return (yaw+360);
         }
         else{

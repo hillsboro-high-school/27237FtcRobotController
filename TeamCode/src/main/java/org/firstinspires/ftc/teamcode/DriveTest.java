@@ -29,16 +29,25 @@
 
 package org.firstinspires.ftc.teamcode;
 
+import android.graphics.Color;
+import android.view.View;
+
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
+import com.qualcomm.robotcore.hardware.NormalizedRGBA;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.SwitchableLight;
 import com.qualcomm.robotcore.hardware.TouchSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcontroller.external.samples.SensorColor;
+
+import java.util.Objects;
 
 /*
  * This file contains an example of a Linear "OpMode".
@@ -81,7 +90,6 @@ public class DriveTest extends LinearOpMode {
     private DcMotor leftArmSlidesM = null;
     private DcMotor rightArmSlidesM = null;
     private DcMotor armAxelM = null;
-    SensorColor teamColorSensor = null;
     Servo clawS;
 
     TouchSensor resetSlide;
@@ -104,7 +112,30 @@ public class DriveTest extends LinearOpMode {
         axel_pos = armAxelM.getCurrentPosition();
     }
 
-    private int lastClawPos = 0;
+    private int lastClawPos = 1;
+
+    // Color Sensor
+
+    ColorSensor teamColorSensor = null;
+    String allianceColor;
+    ColorSensor sampleColorSensor = null;
+
+    double redR = 189.0;
+    double redG = 119.5;
+    double redB = 67;
+
+    double blueR = 54.5;
+    double blueG = 94.5;
+    double blueB = 130.5;
+
+    double yellowR = 239.5;
+    double yellowG = 305.5;
+    double yellowB = 92.7;
+
+    int tileR;
+    int tileG;
+    int tileB;
+    boolean full;
 
     @Override
     public void runOpMode() {
@@ -131,30 +162,28 @@ public class DriveTest extends LinearOpMode {
         leftArmSlidesM.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         armAxelM.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
-        // ########################################################################################
-        // !!!            IMPORTANT Drive Information. Test your motor directions.            !!!!!
-        // ########################################################################################
-        // Most robots need the motors on one side to be reversed to drive forward.
-        // The motor reversals shown here are for a "direct drive" robot (the wheels turn the same direction as the motor shaft)
-        // If your robot has additional gear reductions or uses a right-angled drive, it's important to ensure
-        // that your motors are turning in the correct direction.  So, start out with the reversals here, BUT
-        // when you first test your robot, push the left joystick forward and observe the direction the wheels turn.
-        // Reverse the direction (flip FORWARD <-> REVERSE ) of any wheel that runs backward
-        // Keep testing until ALL the wheels move the robot forward when you push the left joystick forward.
+        teamColorSensor = hardwareMap.get(ColorSensor.class, "team_color_sensor");
+        sampleColorSensor = hardwareMap.get(ColorSensor.class, "sample_color_sensor");
 
         leftFrontDrive.setDirection(DcMotor.Direction.FORWARD); // 3
-        leftBackDrive.setDirection(DcMotor.Direction.FORWARD);  // 2
+        leftBackDrive.setDirection(DcMotor.Direction.REVERSE);  // 2
         rightFrontDrive.setDirection(DcMotor.Direction.REVERSE);  // 1
-        rightBackDrive.setDirection(DcMotor.Direction.REVERSE);  // 0
+        rightBackDrive.setDirection(DcMotor.Direction.FORWARD);  // 0
+
 
         // Coasting Code
         leftBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        leftBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        leftFrontDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightFrontDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
+        getTileColors();
+
+        teamColor();
+
         // Wait for the game to start (driver presses START)
         telemetry.addData("Status", "Initialized");
+        telemetry.addData("Team", allianceColor);
         telemetry.update();
 
         waitForStart();
@@ -166,7 +195,7 @@ public class DriveTest extends LinearOpMode {
 
             // POV Mode uses left joystick to go forward & strafe, and right joystick to rotate.
             double axial = gamepad1.left_stick_y;
-            double yaw =  gamepad1.left_stick_x;
+            double yaw =  -gamepad1.left_stick_x;
             double lateral  = gamepad1.right_stick_x;
 
             // Combine the joystick requests for each axis-motion to determine each wheel's power.
@@ -174,9 +203,9 @@ public class DriveTest extends LinearOpMode {
 
             // Right Front and Right back have switched lateral signs because of wire swap
             double leftFrontPower  =   axial - lateral + yaw;
-            double rightFrontPower = - axial + lateral + yaw;
-            double leftBackPower   = - axial - lateral - yaw;
-            double rightBackPower  =   axial + lateral - yaw;
+            double rightFrontPower =   axial + lateral + yaw;
+            double leftBackPower   =   -axial + lateral + yaw;
+            double rightBackPower  =   -axial - lateral + yaw;
 
             // Normalize the values so no wheel power exceeds 100%
             // This ensures that the robot maintains the desired motion.
@@ -193,22 +222,22 @@ public class DriveTest extends LinearOpMode {
 
             // Sends Calculated Power to Wheels
             if (!isStopRequested()) {
-                leftFrontDrive.setPower(leftFrontPower / 1.5);
-                rightFrontDrive.setPower(rightFrontPower / 1.5);
-                leftBackDrive.setPower(leftBackPower / 1.5);
-                rightBackDrive.setPower(rightBackPower / 1.5);
+                leftFrontDrive.setPower(leftFrontPower);
+                rightFrontDrive.setPower(rightFrontPower);
+                leftBackDrive.setPower(leftBackPower);
+                rightBackDrive.setPower(rightBackPower);
             }
             else{
                 break;
             }
 
 
-                if (gamepad1.right_trigger > 0 && getAxelPos() > (2500*0.018) && getSlidePos() < 2250) {
+                if (gamepad1.right_trigger > 0 && getAxelPos() > (1600) && getSlidePos() < 2250) {
                 // Manual Extension                            ^~250
                 leftArmSlidesM.setPower(0.8);  // Slides EXTEND
                 rightArmSlidesM.setPower(-0.8);
             }
-            else if(gamepad1.right_trigger > 0 && getAxelPos() <= (2500*0.1018) && getSlidePos() <= 3900){
+            else if(gamepad1.right_trigger > 0 && getAxelPos() <= (1600) && getSlidePos() <= 3900){
                 // Vertical Limiter                             ^~250
                 leftArmSlidesM.setPower(0.8);  // Slides EXTEND
                 rightArmSlidesM.setPower(-0.8);
@@ -216,10 +245,12 @@ public class DriveTest extends LinearOpMode {
 
             else if (gamepad1.left_trigger > 0){
                 // Manual Takedown
+                    lastClawPos = 0;
+                    clawS.setPosition(lastClawPos);
                     leftArmSlidesM.setPower(-0.8); // Slides DESCEND
                     rightArmSlidesM.setPower(0.8);
             }                  // V~250
-            else if (getAxelPos() > (2500*0.1018) && getSlidePos() > 2350) { // Pulls out of illegal zone
+            else if (getAxelPos() > (1600) && getSlidePos() > 2350) { // Pulls out of illegal zone
                 // Horizontal LimiterPL
                 leftArmSlidesM.setPower(-0.8); // Slides DESCEND
                 rightArmSlidesM.setPower(0.8);
@@ -231,9 +262,9 @@ public class DriveTest extends LinearOpMode {
 
 
 
-            telemetry.addData("Slide pos", getSlidePos());
-            telemetry.addData("Axel pos", getAxelPos());
-            telemetry.update();
+            //telemetry.addData("Slide pos", getSlidePos());
+            //telemetry.addData("Axel pos", getAxelPos());
+            //telemetry.update();
 
             if(gamepad1.dpad_down) {armAxelM.setPower(0.6);}  // Axel Rotates FORWARD
             else if(gamepad1.dpad_up && !axel_stop) {armAxelM.setPower(-1.0);}  // Axel Rotates BACKWARD
@@ -242,6 +273,7 @@ public class DriveTest extends LinearOpMode {
 
             if(gamepad1.x && lastClawPos == 0){
                 lastClawPos = 1; // OPEN Claw
+                full = false;
             }
             else if (gamepad1.a && lastClawPos == 1){
                 lastClawPos = 0;  // CLOSE Claw
@@ -249,16 +281,20 @@ public class DriveTest extends LinearOpMode {
 
             clawS.setPosition(lastClawPos);
 
+            if((Objects.equals(sampleColors(), "yellow")) || (Objects.equals(sampleColors(), allianceColor)) && !full){
+                lastClawPos = 0;  // CLOSE Claw
+                full = true;
+            }
+
             if(!(resetSlide.isPressed())){resetSlidePos();}
             if(!(resetAxel.isPressed())){resetAxelPos(); axel_stop = true;}
             else{axel_stop = false;}
 
+            if (gamepad1.dpad_left){
+                getTileColors();
+            }
 
-            // Show the elapsed game time and wheel power.
-            //telemetry.addData("Status", "Run Time: " + runtime.toString());
-            //telemetry.addData("Front left/Right", "%4.2f, %4.2f", leftFrontPower, rightFrontPower);
-            //telemetry.addData("Back  left/Right", "%4.2f, %4.2f", leftBackPower, rightBackPower);
-            //telemetry.addData("Yaw / Lateral / Axial", "%4.2f, %4.2f, %4.2f", yaw, lateral, axial);
+            telemetry.addData("Color", sampleColors());
             telemetry.update();
         }
 
@@ -267,4 +303,110 @@ public class DriveTest extends LinearOpMode {
         leftBackDrive.setPower(0);
         rightBackDrive.setPower(0);
 
-    }}
+    }
+    public String sampleColors(){
+        int inputRed = sampleColorSensor.red();
+        int inputGreen = sampleColorSensor.green();
+        int inputBlue = sampleColorSensor.blue();
+
+        double RI;
+        double BI;
+        double YI;
+        double EI;
+
+        double Cry;
+        double Crb;
+        double Cre;
+
+        double Cbr;
+        double Cby;
+        double Cbe;
+
+        double Cye;
+        double Cyr;
+        double Cyb;
+
+        double Cer;
+        double Ceb;
+        double Cey;
+
+        double Cr;
+        double Cb;
+        double Cy;
+        double Ce;
+
+        RI = Math.sqrt( Math.pow((inputRed-redR), 2) + Math.pow((inputGreen-redG), 2) + Math.pow((inputBlue-redB), 2) );
+        BI = Math.sqrt( Math.pow((inputRed-blueR), 2) + Math.pow((inputGreen-blueG), 2) + Math.pow((inputBlue-blueB), 2) );
+        YI = Math.sqrt( Math.pow((inputRed-yellowR), 2) + Math.pow((inputGreen-yellowG), 2) + Math.pow((inputBlue-yellowB), 2) );
+        EI = Math.sqrt( Math.pow((inputRed-tileR), 2) + Math.pow((inputGreen-tileG), 2) + Math.pow((inputBlue-tileB), 2) );
+
+        Cry = 1 - (RI/(RI+YI));
+        Crb = 1 - (RI/(RI+BI));
+        Cre = 1 - (RI/(RI+EI));
+
+        Cbr = 1 - (BI/(BI+RI));
+        Cby = 1 - (BI/(BI+YI));
+        Cbe = 1 - (BI/(BI+EI));
+
+        Cye = 1 - (YI/(YI+EI));
+        Cyr = 1 - (YI/(YI+RI));
+        Cyb = 1 - (YI/(YI+BI));
+
+        Cey = 1 - (EI/(EI+YI));
+        Cer = 1 - (EI/(EI+RI));
+        Ceb = 1 - (EI/(EI+BI));
+
+        Cr = (Crb+Cry+Cre)/3;
+        Cb = (Cbr+Cby+Cbe)/3;
+        Cy = (Cyb+Cyr+Cye)/3;
+        Ce = (Cer+Ceb+Cey)/3;
+
+        if(Cr > Cb && Cr > Cy && Cr > Ce){
+            return "red";
+        }
+        else if(Cb > Cy && Cb > Ce){
+            return "blue";
+        }
+        else if(Cy > Ce){
+            return "yellow";
+        }
+        else{
+            return "empty";
+        }
+    }
+
+    public void getTileColors(){
+        tileR = sampleColorSensor.red();
+        tileG = sampleColorSensor.green();
+        tileB = sampleColorSensor.blue();
+    }
+
+    public void teamColor() {
+        int inputRed = teamColorSensor.red();
+        int inputGreen = teamColorSensor.green();
+        int inputBlue = teamColorSensor.blue();
+
+        double RI;
+        double BI;
+
+        double Cb;
+        double Cr;
+
+        RI = Math.sqrt( Math.pow((inputRed-1398), 2) + Math.pow((inputGreen-831), 2) + Math.pow((inputBlue-482), 2) );
+        BI = Math.sqrt( Math.pow((inputRed-285), 2) + Math.pow((inputGreen-650), 2) + Math.pow((inputBlue-1333), 2) );
+
+        Cr = 1 - (RI/(RI+BI));
+        Cb = 1 - (BI/(BI+RI));
+
+        if(Cr > Cb){
+            allianceColor = "red";
+        }
+        else{
+            allianceColor = "blue";
+        }
+
+
+
+    }
+}
+
