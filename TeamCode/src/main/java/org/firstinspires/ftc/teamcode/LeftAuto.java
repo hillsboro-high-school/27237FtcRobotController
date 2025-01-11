@@ -139,7 +139,8 @@ public class LeftAuto extends LinearOpMode {
         imu.resetYaw();
 
         YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
-        curAngle = 0;
+        imu.resetYaw();
+        //curAngle = 0;
 
         resetTicks();
         setNormalDrive();  // Sets all motors to correct forward/reverse
@@ -163,8 +164,8 @@ public class LeftAuto extends LinearOpMode {
             //doesnt turn left and right back to back
             //curAngle = turnLeft(-0.3, 6, 90, orientation, curAngle);
 
-            curAngle = turnRight(-0.3, 3, 90, orientation, curAngle);
-            curAngle = turnRight(-0.3, 3, 90, orientation, curAngle);
+            turnRight(-0.3, 3, 90, orientation);
+            turnRight(-0.3, 3, 90, orientation);
 
             //curAngle = turnLeft(-0.3, 10, 270, orientation, curAngle);
             //curAngle = turnRight(-0.3, 10, 359, orientation,curAngle);
@@ -463,46 +464,41 @@ public class LeftAuto extends LinearOpMode {
 
         stopAllPower();
         resetTicks();
+        imu.resetYaw();
 
         //telemIMUOrientation(orientation, yaw);
 
         sleep(1000*sleep);
-
-        return ((curAngle + yaw) % 360);
     }
 
-    public double turnRight(double power, long sleep, double targetAngle, YawPitchRollAngles orientation, double curAngle){
+    public void turnRight(double power, long sleep, double targetAngle, YawPitchRollAngles orientation){
         double yaw = orientation.getYaw();
         targetAngle = -targetAngle;
-        double newTarget = targetAngle - curAngle;
 
         setLeftPower(power);
         setRightPower(-power);
 
         telemetry.addData("Yaw", yaw);
         telemetry.addData("Target", targetAngle);
-        telemetry.addData("New Target", newTarget);
         telemetry.update();
 
-        while(yaw > newTarget){
+        while(yaw > targetAngle){
             orientation = imu.getRobotYawPitchRollAngles();
             yaw = orientation.getYaw();
 
             telemetry.addData("Yaw", yaw);
             telemetry.addData("Target", targetAngle);
-            telemetry.addData("New Target", newTarget);
             telemetry.update();
             //telemIMUOrientation(orientation, yaw);
         }
 
         stopAllPower();
         resetTicks();
+        imu.resetYaw();
 
         //telemIMUOrientation(orientation, yaw);
 
         sleep(1000*sleep);
-
-        return(yaw);
     }
 
     public void openClaw(){
