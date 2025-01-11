@@ -66,8 +66,6 @@ public class LeftAuto extends LinearOpMode {
     // Divides by 25.4 to change mm to inches
     double OPcircumference = 2.0*Math.PI*(16.0/25.4);
 
-    double yaw;
-
     double curAngle;
 
     YawPitchRollAngles orientation;
@@ -141,12 +139,11 @@ public class LeftAuto extends LinearOpMode {
         imu.resetYaw();
 
         YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
-        yaw = orientation.getYaw();
-        curAngle = yaw;
+        curAngle = 0;
 
         resetTicks();
         setNormalDrive();  // Sets all motors to correct forward/reverse
-        telemIMUOrientation(orientation, yaw);
+        telemIMUOrientation(orientation);
 
         teamColor();
 
@@ -165,13 +162,16 @@ public class LeftAuto extends LinearOpMode {
             // Turn Testing
             //doesnt turn left and right back to back
             //curAngle = turnLeft(-0.3, 6, 90, orientation, curAngle);
-            curAngle = turnRight(-0.3, 10, 90, orientation, curAngle);
-            curAngle = turnLeft(-0.3, 10, 270, orientation, curAngle);
-            curAngle = turnRight(-0.3, 10, 359, orientation,curAngle);
-            curAngle = turnLeft(-0.3, 10, 180, orientation, curAngle);  // 360 and 0 degrees don't work with IMU
-            curAngle = turnRight(-0.3, 10, 45, orientation, curAngle);
 
-            telemIMUOrientation(orientation, yaw);
+            curAngle = turnRight(-0.3, 3, 90, orientation, curAngle);
+            curAngle = turnRight(-0.3, 3, 90, orientation, curAngle);
+
+            //curAngle = turnLeft(-0.3, 10, 270, orientation, curAngle);
+            //curAngle = turnRight(-0.3, 10, 359, orientation,curAngle);
+            //curAngle = turnLeft(-0.3, 10, 180, orientation, curAngle);  // 360 and 0 degrees don't work with IMU
+            //curAngle = turnRight(-0.3, 10, 45, orientation, curAngle);
+
+            telemIMUOrientation(orientation);
 
 
 
@@ -471,23 +471,26 @@ public class LeftAuto extends LinearOpMode {
         return ((curAngle + yaw) % 360);
     }
 
-    public double turnRight(double power, long sleep, double angle, YawPitchRollAngles orientation, double curAngle){
+    public double turnRight(double power, long sleep, double targetAngle, YawPitchRollAngles orientation, double curAngle){
         double yaw = orientation.getYaw();
-        double targetAngle = curAngle - angle;
+        targetAngle = -targetAngle;
+        double newTarget = targetAngle - curAngle;
 
         setLeftPower(power);
         setRightPower(-power);
 
-        telemetry.addData("Target", targetAngle);
-        telemetry.addData("rightYaw C", rightYawConversion(yaw));
         telemetry.addData("Yaw", yaw);
+        telemetry.addData("Target", targetAngle);
+        telemetry.addData("New Target", newTarget);
         telemetry.update();
 
-        while(rightYawConversion(yaw) <= targetAngle){
+        while(yaw > newTarget){
             orientation = imu.getRobotYawPitchRollAngles();
             yaw = orientation.getYaw();
+
+            telemetry.addData("Yaw", yaw);
             telemetry.addData("Target", targetAngle);
-            telemetry.addData("rightYaw C", rightYawConversion(yaw));
+            telemetry.addData("New Target", newTarget);
             telemetry.update();
             //telemIMUOrientation(orientation, yaw);
         }
@@ -499,7 +502,7 @@ public class LeftAuto extends LinearOpMode {
 
         sleep(1000*sleep);
 
-        return((curAngle + yaw) % 360);
+        return(yaw);
     }
 
     public void openClaw(){
@@ -638,11 +641,10 @@ public class LeftAuto extends LinearOpMode {
         telemetry.update();
     }
 
-    public void telemIMUOrientation(YawPitchRollAngles orientation, double yaw){
+    public void telemIMUOrientation(YawPitchRollAngles orientation){
         telemetry.addData("Yaw (Z)", "%.2f Deg. (Heading)", orientation.getYaw(AngleUnit.DEGREES));
         telemetry.addData("Pitch (X)", "%.2f Deg.", orientation.getPitch(AngleUnit.DEGREES));
         telemetry.addData("Roll (Y)", "%.2f Deg.\n", orientation.getRoll(AngleUnit.DEGREES));
-        telemetry.addData("Var Yaw", yaw);
         telemetry.update();
     }
 
