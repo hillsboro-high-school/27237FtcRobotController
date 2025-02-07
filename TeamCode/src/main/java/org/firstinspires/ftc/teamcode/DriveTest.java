@@ -112,7 +112,7 @@ public class DriveTest extends LinearOpMode {
         axel_pos = armAxelM.getCurrentPosition();
     }
 
-    private int lastClawPos = 1;
+    private double lastClawPos = 1;
 
     // Color Sensor
 
@@ -228,6 +228,10 @@ public class DriveTest extends LinearOpMode {
                 rightBackDrive.setPower(rightBackPower);
             }
             else{
+                leftFrontDrive.setPower(0);
+                rightFrontDrive.setPower(0);
+                leftBackDrive.setPower(0);
+                rightBackDrive.setPower(0);
                 break;
             }
 
@@ -245,8 +249,6 @@ public class DriveTest extends LinearOpMode {
 
             else if (gamepad1.left_trigger > 0){
                 // Manual Takedown
-                    lastClawPos = 0;
-                    clawS.setPosition(lastClawPos);
                     leftArmSlidesM.setPower(-0.8); // Slides DESCEND
                     rightArmSlidesM.setPower(0.8);
             }                  // V~250
@@ -271,19 +273,17 @@ public class DriveTest extends LinearOpMode {
             else {armAxelM.setPower(0.0);}
 
 
-            if(gamepad1.x && lastClawPos == 0){
-                lastClawPos = 1; // OPEN Claw
-                full = false;
+            if(gamepad1.x && lastClawPos == 1){
+                lastClawPos = 0; // OPEN Claw
             }
-            else if (gamepad1.a && lastClawPos == 1){
-                lastClawPos = 0;  // CLOSE Claw
+            else if (gamepad1.a && lastClawPos == 0){
+                lastClawPos = 1;  // CLOSE Claw
             }
 
             clawS.setPosition(lastClawPos);
 
-            if((Objects.equals(sampleColors(), "yellow")) || (Objects.equals(sampleColors(), allianceColor)) && !full){
-                lastClawPos = 0;  // CLOSE Claw
-                full = true;
+            if((Objects.equals(sampleColors(), "yellow")) || (Objects.equals(sampleColors(), allianceColor))){
+                lastClawPos = 1;  // CLOSE Claw
             }
 
             if(!(resetSlide.isPressed())){resetSlidePos();}
@@ -297,12 +297,6 @@ public class DriveTest extends LinearOpMode {
             telemetry.addData("Color", sampleColors());
             telemetry.update();
         }
-
-        leftFrontDrive.setPower(0);
-        rightFrontDrive.setPower(0);
-        leftBackDrive.setPower(0);
-        rightBackDrive.setPower(0);
-
     }
     public String sampleColors(){
         int inputRed = sampleColorSensor.red();

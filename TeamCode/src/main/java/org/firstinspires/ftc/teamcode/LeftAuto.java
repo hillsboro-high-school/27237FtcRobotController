@@ -1,28 +1,16 @@
 package org.firstinspires.ftc.teamcode;
 
-import android.app.Activity;
-import android.graphics.Color;
-import android.view.GestureDetector;
-import android.view.View;
-
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.robotcore.hardware.DistanceSensor;
-import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
-import com.qualcomm.robotcore.hardware.NormalizedRGBA;
-import com.qualcomm.robotcore.hardware.SwitchableLight;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.ColorSensor;
 
-import org.firstinspires.ftc.robotcontroller.external.samples.SensorColor;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.AngularVelocity;
-import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 
 import java.util.Objects;
@@ -59,6 +47,8 @@ public class LeftAuto extends LinearOpMode {
     private boolean leftStop = false;
 
     private double tileMatLength = 12*2;  // Inches
+
+    final double ptTileMat = Math.sqrt( (Math.pow(tileMatLength, 2)) + Math.pow(tileMatLength,2) );
 
     double localTargetTick;
     double slideTarget;
@@ -147,8 +137,9 @@ public class LeftAuto extends LinearOpMode {
         telemIMUOrientation(orientation);
 
         teamColor();
+        //getYellowColors();
 
-        telemetry.addData("CurAngle", curAngle);
+        telemetry.addData("CurAngle", getRuntime());
         telemetry.addData("Status", "Initialized");
         telemetry.addData("Team", allianceColor);
         telemetry.update();
@@ -159,69 +150,196 @@ public class LeftAuto extends LinearOpMode {
 
         while (opModeIsActive()) {
 
-
-            // Turn Testing
-            //doesnt turn left and right back to back
-            //curAngle = turnLeft(-0.3, 6, 90, orientation, curAngle);
-
-            turnRight(-0.3, 3, 90, orientation);
-            turnRight(-0.3, 3, 90, orientation);
-
-            //curAngle = turnLeft(-0.3, 10, 270, orientation, curAngle);
-            //curAngle = turnRight(-0.3, 10, 359, orientation,curAngle);
-            //curAngle = turnLeft(-0.3, 10, 180, orientation, curAngle);  // 360 and 0 degrees don't work with IMU
-            //curAngle = turnRight(-0.3, 10, 45, orientation, curAngle);
-
-            telemIMUOrientation(orientation);
-
-
-
             /*
-            // MEET 3 CODE
+            ALL POWER MUST BE NEGATIVE
+            Sleep is used when testing, set to 0 for max time
+
+             */
+            int startingSlidePos = leftArmSlidesM.getCurrentPosition();
+            axelUp(300); // This value only works if robot is POWERED ON when slides are VERTICAL
+
+            ascendSlides(1850);
+
+            localTargetTick = inchesToTicks(tileMatLength*1.3);
+            driveForward(localTargetTick, -0.5,1);
+
+            descendSlidesAndAxel(startingSlidePos+100, 1000);  // aTarget = Axel Target = Placeholder
+
+            localTargetTick = inchesToTicks(tileMatLength*0.3);
+            driveBackward(localTargetTick, -0.5, 1);
+
+            localTargetTick = inchesToTicks(tileMatLength*1.3);
+            strafeLeft(localTargetTick, -0.5, 1);
+
+            axelDown(2350);
+            ascendSlides(1900);
+            closeClaw();
+            descendSlides(1900);
+            axelUp(300);
+
+            turnLeft(-0.5, 90, orientation);
+            turnLeft(-0.5, 45, orientation);
+
+            localTargetTick = inchesToTicks(ptTileMat);
+            driveForward(ptTileMat, -0.5, 1);
+
+            // Places first sample in high basket
+            ascendSlides(3700);
+            axelDown(400);
+            openClaw();
+            sleep(300);
+            axelUp(300);
+            sleep(300);  // Sleeps are for safety, can remove to speed up
+
+            turnRight(-0.5, 90, orientation);
+            turnRight(-0.5, 45, orientation);
+
+            descendSlidesAndAxel(startingSlidePos+100, 2350);
+            ascendSlides(1900);
+            closeClaw();
+            descendSlides(1900);
+            axelUp(300);
+
+            turnLeft(-0.5, 90, orientation);
+            turnLeft(-0.5, 45, orientation);
+
+            // Places second sample in high basket
+            ascendSlides(3700);
+            axelDown(400);
+            openClaw();
+            sleep(300);
+            axelUp(300);
+            sleep(300);  // Sleeps are for safety, can remove to speed up
+
+            // Idk if we should go for the third sample or park
+
+            /* Code for third sample
+
+            turnRight(-0.5, 45, orientation);
+            descendSlides(startingSlidePos+100);
+            localTargetTick = inchesToTicks(tileMatLength*1.5);
+            strafeRight(localTargetTick, -0.5, 1);
+
+            descendSlidesAndAxel(startingSlidePos+100, 2350);
+            ascendSlides(1900);
+            closeClaw();
+            descendSlides(1900);
+            axelUp(300);
+
+            localTargetTick = inchesToTicks(tileMatLength*1.5);
+            strafeLeft(localTargetTick, -0.5, 1);
+
+            turnLeft(-0.5, 45, orientation);
+
+            // Places second sample in high basket
+            ascendSlides(3700);
+            axelDown(400);
+            openClaw();
+            sleep(300);
+            axelUp(300);
+            sleep(300);  // Sleeps are for safety, can remove to speed up
+             */
+
+            // Goes to sub
+            turnRight(-0.5, 45, orientation);
+
+            descendSlides(startingSlidePos+100);
+
+            localTargetTick = inchesToTicks(tileMatLength*2);
+            strafeRight(localTargetTick, -0.5, 1);
+
+            turnRight(-0.5, 90, orientation);
+            turnRight(-0.5, 45, orientation);
+
+            localTargetTick = inchesToTicks(tileMatLength*1.3);
+            driveForward(localTargetTick, -0.5, 1);
+
+            axelDown(1000);
+            getTileColors();
+            ascendSlides(1850);
+
+            //Search Sub CODE
+
+            break;
+
+            // Total Points With 2 Samples WITH PARK: 10+(8*2)+3 = 29 at end of auto -> 52 in end game
+            // Total Points With 3 Samples WITH PARK: 10+(8*3)+3 = 37 at end of auto -> 68 in end game
+
+            // Total points With 2 Samples NO PARK: 10+(8*2)+2= 28 at end of auto -> 56 in end game
+            // Total points With 3 Samples NO PARK: 10+(8*3)+2= 36 at end of auto -> 72 in end game
+
+
+            /* MEET 4 CODE
             closeClaw();
 
             // place starting sample in basket
             int startingSlidePos = leftArmSlidesM.getCurrentPosition();
-            slideTarget = 3500;  // placeholder value
-            ascendSlides(slideTarget);
-            openClaw();
-            sleep(500);
-            descendSlides(startingSlidePos);
+            axelUp(300);
 
-            axelDown(900);
-
-            telemetry.addData("Axel", armAxelM.getCurrentPosition());
-            telemetry.update();
-
-            getTileColors();
-
-            localTargetTick = InchesToTicks(tileMatLength*0.5);
-            strafeRight(localTargetTick, -0.4, 1);
-            curAngle = turnLeft(-0.4, 1, 270, orientation, curAngle);
+            localTargetTick = InchesToTicks(tileMatLength*0.2);
+            strafeRight(localTargetTick, -0.5, 0);
 
             localTargetTick = InchesToTicks(tileMatLength);
-            while(true){
-                strafeLeft(localTargetTick, -0.4, 1);
-                if (!(Objects.equals(sampleColors(), "empty"))){
-                    break;
-                }
-                else{
-                    localTargetTick = localTargetTick/2;
-                }
+            driveForward(localTargetTick, -0.5, 0);
 
-                strafeRight(localTargetTick, -0.4, 1);
-                if (!(Objects.equals(sampleColors(), "empty"))){
-                    break;
-                }
-                else{
-                    localTargetTick = localTargetTick/2;
-                }
-            }
-            curAngle = turnLeft(-0.4, 1, 90, orientation, curAngle);
-            localTargetTick = InchesToTicks(tileMatLength*0.5);
-            strafeLeft(localTargetTick, -0.4, 1);
+            turnLeft(-0.3, 45, orientation);
+
+            slideTarget = 3700;
+            ascendSlides(slideTarget);
+
+            axelDown(400);
+            openClaw();
+            sleep(300);
+            axelUp(300);
+            sleep(300);
+
+            turnRight(-0.4, 45, orientation);
+            turnRight(-0.4, 90, orientation);
+
+            descendSlides(startingSlidePos+100);
+
+            localTargetTick = InchesToTicks(tileMatLength*0.1);
+            driveForward(localTargetTick, -0.3, 0);
+
+            axelDown(2350);
+            slideTarget = 1900;
+            ascendSlides(slideTarget);
+            closeClaw();
+            sleep(500);
+            descendSlides(startingSlidePos+300);
+            axelUp(300);
+
+            driveBackward(localTargetTick, -0.3, 0);
+
+            turnLeft(-0.4, 90, orientation);
+            turnLeft(-0.4 , 44, orientation);
+
+            slideTarget = 3700;
+            ascendSlides(slideTarget);
+
+            axelDown(400);
+            openClaw();
+            sleep(300);
+            axelUp(300);
+            sleep(300);
+
+            turnLeft(-0.4, 5, orientation);
+
+            localTargetTick = InchesToTicks(tileMatLength*1.25);
+            driveBackward(localTargetTick, -0.6, 1);
+
+            descendSlides(475);
+
+            localTargetTick = InchesToTicks(tileMatLength*1.25);
+            driveBackward(localTargetTick, -0.6, 1);
+
+            descendSlides(475);
+
+            stopAllPower();
+            break;
 
              */
+
 
 
         }
@@ -290,8 +408,6 @@ public class LeftAuto extends LinearOpMode {
         double Cy;
         double Ce;
 
-        String finalColor;
-
         RI = Math.sqrt( Math.pow((inputRed-redR), 2) + Math.pow((inputGreen-redG), 2) + Math.pow((inputBlue-redB), 2) );
         BI = Math.sqrt( Math.pow((inputRed-blueR), 2) + Math.pow((inputGreen-blueG), 2) + Math.pow((inputBlue-blueB), 2) );
         YI = Math.sqrt( Math.pow((inputRed-yellowR), 2) + Math.pow((inputGreen-yellowG), 2) + Math.pow((inputBlue-yellowB), 2) );
@@ -318,22 +434,24 @@ public class LeftAuto extends LinearOpMode {
         Cy = (Cyb+Cyr+Cye)/3;
         Ce = (Cer+Ceb+Cey)/3;
 
-        telemetry.addData("Confidence Red", Cr);
-        telemetry.addData("Confidence Blue", Cb);
-        telemetry.addData("Confidence Yellow", Cy);
-        telemetry.addData("Confidence Empty", Ce);
-        telemetry.update();
-
         if(Cr > Cb && Cr > Cy && Cr > Ce){
+            telemetry.addData("Color", "Red");
+            telemetry.update();
             return "red";
         }
         else if(Cb > Cy && Cb > Ce){
+            telemetry.addData("Color", "Blue");
+            telemetry.update();
             return "blue";
         }
         else if(Cy > Ce){
+            telemetry.addData("Color", "Yellow");
+            telemetry.update();
             return "yellow";
         }
         else{
+            telemetry.addData("Color", "Empty");
+            telemetry.update();
             return "empty";
         }
     }
@@ -342,6 +460,12 @@ public class LeftAuto extends LinearOpMode {
         tileR = sampleColorSensor.red();
         tileG = sampleColorSensor.green();
         tileB = sampleColorSensor.blue();
+    }
+
+    public void getYellowColors(){
+        yellowR = sampleColorSensor.red();
+        yellowG = sampleColorSensor.green();
+        yellowB = sampleColorSensor.blue();
     }
 
     public void driveForward(double targetTicks, double power, long sleep) {
@@ -441,23 +565,21 @@ public class LeftAuto extends LinearOpMode {
     }
 
     // Turns in one direction but doesn't turn back to back
-    public double turnLeft(double power, long sleep, double angle, YawPitchRollAngles orientation, double curAngle){
+    public void turnLeft(double power, double targetAngle, YawPitchRollAngles orientation){
         double yaw = orientation.getYaw();
-        double targetAngle = ((curAngle + angle) % 360);
 
-        telemetry.addData("Target", targetAngle);
-        telemetry.addData("leftYaw C", leftYawConversion(yaw));
         telemetry.addData("Yaw", yaw);
+        telemetry.addData("Target", targetAngle);
         telemetry.update();
 
         setRightPower(power);
         setLeftPower(-power);
 
-        while(leftYawConversion(yaw) <= targetAngle){
+        while(yaw < targetAngle){
             orientation = imu.getRobotYawPitchRollAngles();
             yaw = orientation.getYaw();
+            telemetry.addData("Yaw", yaw);
             telemetry.addData("Target", targetAngle);
-            telemetry.addData("leftYaw C", leftYawConversion(yaw));
             telemetry.update();
             //telemIMUOrientation(orientation, yaw);
         }
@@ -467,11 +589,9 @@ public class LeftAuto extends LinearOpMode {
         imu.resetYaw();
 
         //telemIMUOrientation(orientation, yaw);
-
-        sleep(1000*sleep);
     }
 
-    public void turnRight(double power, long sleep, double targetAngle, YawPitchRollAngles orientation){
+    public void turnRight(double power, double targetAngle, YawPitchRollAngles orientation){
         double yaw = orientation.getYaw();
         targetAngle = -targetAngle;
 
@@ -497,16 +617,14 @@ public class LeftAuto extends LinearOpMode {
         imu.resetYaw();
 
         //telemIMUOrientation(orientation, yaw);
-
-        sleep(1000*sleep);
     }
 
     public void openClaw(){
-        clawS.setPosition(1.0);
+        clawS.setPosition(0);
     }
 
     public void closeClaw(){
-        clawS.setPosition(0);
+        clawS.setPosition(1.0);
     }
 
     public void ascendSlides(double target){
@@ -525,20 +643,41 @@ public class LeftAuto extends LinearOpMode {
        stopSlides();
     }
 
+    public void descendSlidesAndAxel(double sTarget, double aTarget) {
+        boolean slideStop = false;
+        boolean axelStop = false;
+        while (!(slideStop && axelStop)){
+            leftArmSlidesM.setPower(-0.8);
+            rightArmSlidesM.setPower(0.8);
+            armAxelM.setPower(0.9);
+            if (leftArmSlidesM.getCurrentPosition() == sTarget){
+                slideStop = true;
+                stopSlides();
+            }
+            if (armAxelM.getCurrentPosition() == aTarget){
+                axelStop = true;
+                stopAxel();
+            }
+
+
+        }
+        stopSlides();
+    }
+
     public void stopSlides(){
         leftArmSlidesM.setPower(0.0);
         rightArmSlidesM.setPower(0.0);
     }
 
     public void axelUp(double target){
-        while ((armAxelM.getCurrentPosition() - 80) > target) {
+        while (armAxelM.getCurrentPosition() > target) {
             armAxelM.setPower(-0.8);
         }
         stopAxel();
     }
 
     public void axelDown(double target){
-        while ((armAxelM.getCurrentPosition() + 80) < target) {
+        while (armAxelM.getCurrentPosition() < target) {
             armAxelM.setPower(0.8);
         }
         stopAxel();
@@ -667,7 +806,7 @@ public class LeftAuto extends LinearOpMode {
         double inches = OPcircumference * rev;
         return inches;
     }
-    public double InchesToTicks(double inches) {
+    public double inchesToTicks(double inches) {
         double rev = inches / OPcircumference;
         double tick = 2000 * rev;
         return tick;

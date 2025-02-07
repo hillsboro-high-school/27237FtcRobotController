@@ -17,9 +17,6 @@ public class RightAuto extends LinearOpMode {
     private DcMotor FR = null;
     private DcMotor BR = null;
 
-    private DcMotor armSlidesM = null;
-    Servo armAxelS;
-
     private DcMotor leftEncoderMotor = null;
     private double leftEncoderPos = 0;
     private double deltaLeftEncoder = 0;
@@ -55,9 +52,6 @@ public class RightAuto extends LinearOpMode {
         FR = hardwareMap.get(DcMotor.class, "right_front_drive");
         BR = hardwareMap.get(DcMotor.class, "right_back_drive");
 
-        armSlidesM = hardwareMap.get(DcMotor.class, "arm_slides");
-        armAxelS = hardwareMap.get(Servo.class, "arm_axel");
-
         leftEncoderMotor = hardwareMap.get(DcMotor.class, "left_front_drive");
         rightEncoderMotor = hardwareMap.get(DcMotor.class, "right_front_drive");
         centerEncoderMotor = hardwareMap.get(DcMotor.class, "left_back_drive");
@@ -82,29 +76,11 @@ public class RightAuto extends LinearOpMode {
         waitForStart();
         resetTicks();
 
-        localTargetTick = InchesToTicks(tileMatLength*0.9);
-        strafeRight(localTargetTick, -0.4, 1);
-
-        localTargetTick = (InchesToTicks(tileMatLength*2.85));
-        driveForward(localTargetTick, -0.5, 1);
-
-        localTargetTick = InchesToTicks(tileMatLength*0.8);
-        strafeLeft(localTargetTick, -0.4, 1);
-
-        localTargetTick = (InchesToTicks(tileMatLength*0.5));
-        driveBackward(localTargetTick, -0.5, 1);
-
-        localTargetTick = InchesToTicks(tileMatLength*0.9);
-        strafeRight(localTargetTick, -0.4, 1);
-
-        localTargetTick = (InchesToTicks(tileMatLength*4.0));
-        driveBackward(localTargetTick, -0.5, 1);
-
-        localTargetTick = InchesToTicks(tileMatLength*0.5);
-        strafeLeft(localTargetTick, -0.4, 1);
-
-
-        telemAllTicks("None");
+        while (opModeIsActive()) {
+            localTargetTick = InchesToTicks(tileMatLength * 1.2);
+            driveForward(localTargetTick, -0.4, 1);
+            break;
+        }
     }
 
     public void driveForward(double targetTicks, double power, long sleep) {
